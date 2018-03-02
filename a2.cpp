@@ -543,8 +543,8 @@ void imageOnBillboards(CImg<double> input_image)
 
 
 // Find the euclidean distance between 2 sift descriptors
-double find_distance(SiftDescriptor original_descriptor,
-                     SiftDescriptor match_descriptor)
+double find_distance(const SiftDescriptor &original_descriptor,
+                     const SiftDescriptor &match_descriptor)
 {
   double distance = 0.0;
 
@@ -564,8 +564,8 @@ double find_distance(SiftDescriptor original_descriptor,
   If there is a match above the threshold, return the index of that element.
   Otherwise, return -1.
 */
-int find_match(SiftDescriptor original_descriptor,
-               vector<SiftDescriptor> match_descriptors,
+int find_match(const SiftDescriptor &original_descriptor,
+               const vector<SiftDescriptor> &match_descriptors,
                double threshold)
 {
   double best_distance = 100000000.0;
@@ -608,8 +608,8 @@ int find_match(SiftDescriptor original_descriptor,
   Given an even element, the match  is the next odd element. For example,
   matches[0] corresponds to matches[1]
 */
-vector<int> find_all_matches(vector<SiftDescriptor> original_descriptors,
-                             vector<SiftDescriptor> match_descriptors,
+vector<int> find_all_matches(const vector<SiftDescriptor> &original_descriptors,
+                             const vector<SiftDescriptor> &match_descriptors,
                              double threshold)
 {
   int match_index;
@@ -634,8 +634,8 @@ vector<int> find_all_matches(vector<SiftDescriptor> original_descriptors,
 
 
 
-CImg<double> combine_images(CImg<double> original_image,
-                            CImg<double> new_image)
+CImg<double> combine_images(const CImg<double> &original_image,
+                            const CImg<double> &new_image)
 {
   int larger_height;
 
@@ -675,9 +675,9 @@ CImg<double> combine_images(CImg<double> original_image,
 
 
 CImg<double> draw_lines(CImg<double> combined_image,
-                        vector<SiftDescriptor> image1_descriptors,
-                        vector<SiftDescriptor> image2_descriptors,
-                        vector<int> all_matches,
+                        const vector<SiftDescriptor> &image1_descriptors,
+                        const vector<SiftDescriptor> &image2_descriptors,
+                        const vector<int> &all_matches,
                         int added_width)
 {
 
@@ -695,6 +695,251 @@ CImg<double> draw_lines(CImg<double> combined_image,
 
   return combined_image;
 
+}
+
+
+
+// A REALLY hacky way to generator random numbers
+vector<int> get_random_numbers(int max,
+                               int num_numbers,
+                               CImg<int> random_generator)
+{
+  vector<int> random_numbers;
+
+  for (int i = 0; i < num_numbers; i++) {
+    random_generator.rand(0, max);
+    random_numbers.push_back(random_generator(0,0,0,0));
+  }
+  return random_numbers;
+
+}
+
+
+
+vector<double> get_random_homography(const vector<SiftDescriptor> &image1_descriptors,
+                                     const vector<SiftDescriptor> &image2_descriptors,
+                                     const vector<int> &all_matches,
+                                     CImg<int> random_generator)
+{
+  int max_value = (all_matches.size() / 2) - 1;
+  vector<int> point_indices = 
+      get_random_numbers(max_value, 4, random_generator);
+
+
+  vector<double> from_1(2);
+  vector<double> to_1(2);
+  vector<double> from_2(2);
+  vector<double> to_2(2);
+  vector<double> from_3(2);
+  vector<double> to_3(2);
+  vector<double> from_4(2);
+  vector<double> to_4(2);
+
+  int index_1, index_2, index_3, index_4;
+
+  index_1 = point_indices[0] * 2;
+  index_2 = point_indices[1] * 2;
+  index_3 = point_indices[2] * 2;
+  index_4 = point_indices[3] * 2;
+
+
+  from_1[0] = image1_descriptors[all_matches[index_1]].col;
+  from_1[1] = image1_descriptors[all_matches[index_1]].row;
+
+  from_2[0] = image1_descriptors[all_matches[index_2]].col;
+  from_2[1] = image1_descriptors[all_matches[index_2]].row;
+
+  from_3[0] = image1_descriptors[all_matches[index_3]].col;
+  from_3[1] = image1_descriptors[all_matches[index_3]].row;
+
+  from_4[0] = image1_descriptors[all_matches[index_4]].col;
+  from_4[1] = image1_descriptors[all_matches[index_4]].row;
+
+  to_1[0] = image2_descriptors[all_matches[index_1 + 1]].col;
+  to_1[1] = image2_descriptors[all_matches[index_1 + 1]].row;
+
+  to_2[0] = image2_descriptors[all_matches[index_2 + 1]].col;
+  to_2[1] = image2_descriptors[all_matches[index_2 + 1]].row;
+
+  to_3[0] = image2_descriptors[all_matches[index_3 + 1]].col;
+  to_3[1] = image2_descriptors[all_matches[index_3 + 1]].row;
+
+  to_4[0] = image2_descriptors[all_matches[index_4 + 1]].col;
+  to_4[1] = image2_descriptors[all_matches[index_4 + 1]].row;
+
+
+  vector<double> transformation_matrix = 
+          get_transformation_matrix(from_1, to_1,
+                                    from_2, to_2,
+                                    from_3, to_3,
+                                    from_4, to_4);
+
+  return transformation_matrix;
+}
+
+
+
+double check_inlier(int x_1,
+                    int y_1,
+                    int x_2,
+                    int y_2,
+                    double inlier_dist_threshold)
+{
+
+  double distance =
+        sqrt(pow((x_1 - x_2), 2.0) + 
+             pow((y_1 - y_2), 2.0));
+
+  if (distance < inlier_dist_threshold) {
+    return distance;
+  } else {
+    return -1.0;
+  }
+
+}
+
+
+
+double evaluate_model(const vector<SiftDescriptor> &image1_descriptors,
+                      const vector<SiftDescriptor> &image2_descriptors,
+                      const vector<int> &all_matches,
+                      const vector<double> &transformation_matrix,
+                      double inlier_dist_threshold,
+                      double inlier_ratio_threshold)
+{
+
+  int total_inliers = 0;
+
+  double pixel_distance;
+  double total_distance = 0.0;
+
+  vector<double> transformed_pixels(2);
+  SiftDescriptor descriptor_1, descriptor_2;
+
+  for (int match_element = 0;
+       match_element < all_matches.size();
+       match_element += 2) {
+
+    descriptor_1 = image1_descriptors[all_matches[match_element]];
+    descriptor_2 = image2_descriptors[all_matches[match_element+1]];
+
+    transformed_pixels = 
+        transform_pixel(transformation_matrix,
+                        descriptor_2.col,
+                        descriptor_2.row,
+                        1.0);
+
+    pixel_distance = check_inlier(descriptor_1.col,
+                                  transformed_pixels[0],
+                                  descriptor_1.row,
+                                  transformed_pixels[1],
+                                  inlier_dist_threshold);
+
+    if (pixel_distance != -1.0) {
+      total_inliers += 1;
+      total_distance += pixel_distance;
+    }
+
+  }
+
+  if (((double) total_inliers / (double) (all_matches.size() / 2))
+       > inlier_ratio_threshold) {
+    return -1.0;
+  } else {
+    return total_distance;
+  }
+
+}
+
+
+
+vector<double> get_best_homography(const vector<SiftDescriptor> &image1_descriptors,
+                                   const vector<SiftDescriptor> &image2_descriptors,
+                                   const vector<int> &all_matches,
+                                   double inlier_dist_threshold,
+                                   double inlier_ratio_threshold,
+                                   int number_trials)
+{
+
+  vector<double> best_homography;
+  double best_distance = -1.0;
+
+  vector<double> current_homography;
+  double current_distance;
+
+  CImg<int> random_generator(1,1,1,1);
+
+  for (int trial = 0; trial < number_trials; trial++) {
+    current_homography = 
+        get_random_homography(image1_descriptors,
+                              image2_descriptors,
+                              all_matches,
+                              random_generator);
+
+    current_distance = 
+        evaluate_model(image1_descriptors,
+                       image2_descriptors,
+                       all_matches,
+                       current_homography,
+                       inlier_dist_threshold,
+                       inlier_ratio_threshold);
+
+    if (best_distance == -1.0) {
+      best_distance = current_distance;
+      best_homography = current_homography;
+    } else if (current_distance < best_distance) {
+      best_distance = current_distance;
+      best_homography = current_homography;
+    }
+
+  }
+
+  return best_homography;
+
+}
+
+
+
+vector<int> get_inliers(const vector<SiftDescriptor> &image1_descriptors,
+                        const vector<SiftDescriptor> &image2_descriptors,
+                        const vector<int> &all_matches,
+                        const vector<double> &transformation_matrix,
+                        double inlier_dist_threshold)
+{
+  vector<int> inliers;
+
+  vector<double> transformed_pixels(2);
+  SiftDescriptor descriptor_1, descriptor_2;
+
+  double pixel_distance;
+
+  for (int match_element = 0;
+       match_element < all_matches.size();
+       match_element += 2) {
+
+    descriptor_1 = image1_descriptors[all_matches[match_element]];
+    descriptor_2 = image2_descriptors[all_matches[match_element+1]];
+
+    transformed_pixels = 
+        transform_pixel(transformation_matrix,
+                        descriptor_2.col,
+                        descriptor_2.row,
+                        1.0);
+
+    pixel_distance = check_inlier(descriptor_1.col,
+                                  transformed_pixels[0],
+                                  descriptor_1.row,
+                                  transformed_pixels[1],
+                                  inlier_dist_threshold);
+
+    if (pixel_distance != -1.0) {
+      inliers.push_back(all_matches[match_element]);
+      inliers.push_back(all_matches[match_element+1]);
+    }
+
+  }
+
+  return inliers;
 }
 
 
@@ -730,23 +975,34 @@ int main(int argc, char **argv)
       imageOnBillboards(input_image);
     }	
     else if(part == "part2"){
-      double threshold;
+
+
+    }
+    else if(part == "part3"){
+      double sift_threshold;
+      double ransac_threshold = 0.8;
+
+     double inlier_dist_threshold;
+     double inlier_ratio_threshold;
+     int number_trials;
 
       if ((argc != 4) && (argc != 5)) {
-        printf("Program Usage ./a2 part1 [input_image1] [input_image2] [threshold]\n");
+        printf("Program Usage ./a2 part3 [input_image1] [input_image2] [threshold] [inlier_dist_threshold] [inlier_ratio_threshold] [number_trials]\n");
         printf("The threshold parameter is optional\n");
         exit(0);
       }
 
       if (argc == 5) {
-        threshold = strtod(argv[4], NULL);
+        sift_threshold = strtod(argv[4], NULL);
       } else {
-        threshold = 0.5;
+        sift_threshold = 0.5;
       }
       CImg<double> input_image1;
       input_image1.load(argv[2]);
       CImg<double> input_image2;
       input_image2.load(argv[3]);
+      CImg<double> combined_image = 
+          combine_images(input_image1, input_image2);
 
       Sift sift;
 
@@ -755,26 +1011,45 @@ int main(int argc, char **argv)
       vector<SiftDescriptor> image2_descriptors =
                         sift.compute_sift(input_image2);
 
-      printf("Finding matches\n");
       vector<int> all_matches =
             find_all_matches(image1_descriptors,
                              image2_descriptors,
-                             threshold);
+                             sift_threshold);
 
-      printf("Finding Images\n");
-      CImg<double> combined_image = 
-          draw_lines(combine_images(input_image1, input_image2),
+      CImg<double> sift_matches = 
+          draw_lines(combined_image,
                      image1_descriptors,
                      image2_descriptors,
                      all_matches,
                      input_image1.width());
 
+      sift_matches.save("sift_maches.png");
 
-      combined_image.save("sift_lines.png");
 
-    }
-    else if(part == "part3"){
-      // RANSAC
+      vector<double> transformation_matrix = 
+          get_best_homography(image1_descriptors,
+                              image2_descriptors,
+                              all_matches,
+                              inlier_dist_threshold,
+                              inlier_ratio_threshold,
+                              number_trials);
+
+      vector<int> inliers = 
+          get_inliers(image1_descriptors,
+                      image2_descriptors,
+                      all_matches,
+                      transformation_matrix,
+                      inlier_dist_threshold);
+
+      CImg<double> ransac_matches =
+          draw_lines(combined_image,
+                     image1_descriptors,
+                     image2_descriptors,
+                     inliers,
+                     input_image1.width());   
+
+      ransac_matches.save("ransac_maches.png");   
+
     }
     else if(part == "part4"){
       // Panorama
