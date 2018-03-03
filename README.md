@@ -33,7 +33,9 @@ We leveraged our previous functions to build up our panorama. We used the first 
 
 For this part we used a sift threshold of 0.5, an inlier distance threshold of 10, and inlier ratio threshold of 0.7, and the number of trials as 100. Since we know the panorama images should have clear correspondences we increased the threshold to ensure we had very high-quality point matches. We also found that having a high number of trials was very important for finding a good homography.
 
-As we started from the first image and moved to the last image (left to right), the last image would often be heavily skewed. However, the overalps in the panorama were often very good, even before we introduced an alogrithm to smooth between the edges of the images.
+As we started from the first image and moved to the last image (left to right), the last image would often be heavily skewed. However, the overlaps in the panorama were often very good, even before we introduced an alogrithm to smooth between the edges of the images.
+
+Similar to part 3, the program attempts to give an error and exit gracefully when given poorly matched images, but it does not handle all cases and may crash.
 
 
 
