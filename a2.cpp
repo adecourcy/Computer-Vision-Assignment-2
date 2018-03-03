@@ -745,29 +745,29 @@ vector<double> get_random_homography(const vector<SiftDescriptor> &image1_descri
   index_4 = point_indices[3] * 2;
 
 
-  from_1[0] = image1_descriptors[all_matches[index_1]].col;
-  from_1[1] = image1_descriptors[all_matches[index_1]].row;
+  to_1[0] = image1_descriptors[all_matches[index_1]].col;
+  to_1[1] = image1_descriptors[all_matches[index_1]].row;
 
-  from_2[0] = image1_descriptors[all_matches[index_2]].col;
-  from_2[1] = image1_descriptors[all_matches[index_2]].row;
+  to_2[0] = image1_descriptors[all_matches[index_2]].col;
+  to_2[1] = image1_descriptors[all_matches[index_2]].row;
 
-  from_3[0] = image1_descriptors[all_matches[index_3]].col;
-  from_3[1] = image1_descriptors[all_matches[index_3]].row;
+  to_3[0] = image1_descriptors[all_matches[index_3]].col;
+  to_3[1] = image1_descriptors[all_matches[index_3]].row;
 
-  from_4[0] = image1_descriptors[all_matches[index_4]].col;
-  from_4[1] = image1_descriptors[all_matches[index_4]].row;
+  to_4[0] = image1_descriptors[all_matches[index_4]].col;
+  to_4[1] = image1_descriptors[all_matches[index_4]].row;
 
-  to_1[0] = image2_descriptors[all_matches[index_1 + 1]].col;
-  to_1[1] = image2_descriptors[all_matches[index_1 + 1]].row;
+  from_1[0] = image2_descriptors[all_matches[index_1 + 1]].col;
+  from_1[1] = image2_descriptors[all_matches[index_1 + 1]].row;
 
-  to_2[0] = image2_descriptors[all_matches[index_2 + 1]].col;
-  to_2[1] = image2_descriptors[all_matches[index_2 + 1]].row;
+  from_2[0] = image2_descriptors[all_matches[index_2 + 1]].col;
+  from_2[1] = image2_descriptors[all_matches[index_2 + 1]].row;
 
-  to_3[0] = image2_descriptors[all_matches[index_3 + 1]].col;
-  to_3[1] = image2_descriptors[all_matches[index_3 + 1]].row;
+  from_3[0] = image2_descriptors[all_matches[index_3 + 1]].col;
+  from_3[1] = image2_descriptors[all_matches[index_3 + 1]].row;
 
-  to_4[0] = image2_descriptors[all_matches[index_4 + 1]].col;
-  to_4[1] = image2_descriptors[all_matches[index_4 + 1]].row;
+  from_4[0] = image2_descriptors[all_matches[index_4 + 1]].col;
+  from_4[1] = image2_descriptors[all_matches[index_4 + 1]].row;
 
 
   vector<double> transformation_matrix = 
@@ -857,17 +857,17 @@ double evaluate_model(const vector<SiftDescriptor> &image1_descriptors,
 
     transformed_pixels = 
         transform_pixel(transformation_matrix,
-                        descriptor_1.col,
-                        descriptor_1.row,
+                        descriptor_2.col,
+                        descriptor_2.row,
                         1.0);
 
     //printf("%f %f\n", descriptor_1.col, descriptor_1.row);
     //printf("%f %f\n", descriptor_2.col, descriptor_2.row);
     //printf("%f %f\n", transformed_pixels[0], transformed_pixels[1]);
 
-    pixel_distance = check_inlier(descriptor_2.col,
+    pixel_distance = check_inlier(descriptor_1.col,
                                   transformed_pixels[0],
-                                  descriptor_2.row,
+                                  descriptor_1.row,
                                   transformed_pixels[1],
                                   inlier_dist_threshold);
 
@@ -1000,15 +1000,15 @@ vector<int> get_inliers(const vector<SiftDescriptor> &image1_descriptors,
 
     transformed_pixels = 
         transform_pixel(transformation_matrix,
-                        descriptor_1.col,
-                        descriptor_1.row,
+                        descriptor_2.col,
+                        descriptor_2.row,
                         1.0);
 
     //printf("get pixel distance\n");
 
-    pixel_distance = check_inlier(descriptor_2.col,
+    pixel_distance = check_inlier(descriptor_1.col,
                                   transformed_pixels[0],
-                                  descriptor_2.row,
+                                  descriptor_1.row,
                                   transformed_pixels[1],
                                   inlier_dist_threshold);
 
@@ -1024,6 +1024,194 @@ vector<int> get_inliers(const vector<SiftDescriptor> &image1_descriptors,
   //printf("return inliers\n");
 
   return inliers;
+}
+
+
+
+vector<int> get_height_width(const vector<double> &transformation_matrix,
+                             const CImg<double> &transform_from)
+{
+  vector<double> transformed_pixel;
+  vector<int> height_width(2);
+  height_width[0] = 0;
+  height_width[1] = 0;
+
+  transformed_pixel =
+      transform_pixel(transformation_matrix,
+                      (double) (transform_from.width() - 1),
+                      (double) (transform_from.height() - 1),
+                      1.0);
+
+  if (transformed_pixel[0] > (double) height_width[0]) {
+    height_width[0] = (int) ceil(transformed_pixel[0]);
+  }
+
+  if (transformed_pixel[0] > (double) height_width[0]) {
+    height_width[0] = (int) ceil(transformed_pixel[0]);
+  }
+
+  if (transformed_pixel[1] > (double) height_width[1]) {
+    height_width[1] = (int) ceil(transformed_pixel[1]);
+  }
+
+  transformed_pixel =
+      transform_pixel(transformation_matrix,
+                      0.0,
+                      (double) (transform_from.height() - 1),
+                      1.0);
+
+  if (transformed_pixel[0] > (double) height_width[0]) {
+    height_width[0] = (int) ceil(transformed_pixel[0]);
+  }
+
+  if (transformed_pixel[1] > (double) height_width[1]) {
+    height_width[1] = (int) ceil(transformed_pixel[1]);
+  }
+
+
+  transformed_pixel =
+      transform_pixel(transformation_matrix,
+                      (double) (transform_from.width() - 1),
+                      0.0,
+                      1.0);
+
+  if (transformed_pixel[0] > (double) height_width[0]) {
+    height_width[0] = (int) ceil(transformed_pixel[0]);
+  }
+
+  if (transformed_pixel[1] > (double) height_width[1]) {
+    height_width[1] = (int) ceil(transformed_pixel[1]);
+  }
+
+  transformed_pixel =
+      transform_pixel(transformation_matrix,
+                      0.0,
+                      0.0,
+                      1.0);
+
+  if (transformed_pixel[0] > (double) height_width[0]) {
+    height_width[0] = (int) ceil(transformed_pixel[0]);
+  }
+
+  if (transformed_pixel[1] > (double) height_width[1]) {
+    height_width[1] = (int) ceil(transformed_pixel[1]);
+  }
+
+  return height_width;
+
+
+}
+
+
+
+CImg<double> merge_images(const CImg<double> &base_image,
+                          const CImg<double> &new_image)
+{
+
+  int height, width;
+  if (base_image.width() > new_image.width()) {
+    width = base_image.width();
+  } else {
+    width = new_image.width();
+  }
+
+  if (base_image.height() > new_image.height()) {
+    height = base_image.height();
+  } else {
+    height = new_image.height();
+  }
+
+  CImg<double> new_base_image(width, height, 1, 3);
+  
+  for (int width = 0; width < new_image.width(); width++) {
+    for (int height = 0; height < new_image.height(); height++) {
+      for (int color = 0; color < 3; color++) {
+        new_base_image(width, height, 0, color) =
+            new_image(width, height, 0, color);
+      }
+    }
+  }
+  
+
+  for (int width = 0; width < base_image.width(); width++) {
+    for (int height = 0; height < base_image.height(); height++) {
+      if ((base_image(width, height, 0, 0) != 0.0) ||
+          (base_image(width, height, 0, 1) != 0.0) ||
+          (base_image(width, height, 0, 2) != 0.0)) {
+
+        for (int color = 0; color < 3; color++) {
+          new_base_image(width, height, 0, color) =
+              base_image(width, height, 0, color);
+        }
+      }
+    }
+  }
+
+  return new_base_image;
+}
+
+
+
+vector<double> matrix_multiply(vector<double> best_homography,
+                               vector<double> transform_matrix)
+{
+  if (transform_matrix.size() == 0) {
+    return best_homography;
+  }
+
+  vector<double> new_matrix(9);
+
+  new_matrix[0] = 
+      best_homography[0] * transform_matrix[0] +
+      best_homography[3] * transform_matrix[1] +
+      best_homography[6] * transform_matrix[2];
+
+  new_matrix[3] = 
+      best_homography[0] * transform_matrix[3] +
+      best_homography[3] * transform_matrix[4] +
+      best_homography[6] * transform_matrix[5];
+
+  new_matrix[6] = 
+      best_homography[0] * transform_matrix[6] +
+      best_homography[3] * transform_matrix[7] +
+      best_homography[6] * transform_matrix[8];
+
+
+
+  new_matrix[1] = 
+      best_homography[1] * transform_matrix[0] +
+      best_homography[4] * transform_matrix[1] +
+      best_homography[7] * transform_matrix[2];
+
+  new_matrix[4] = 
+      best_homography[1] * transform_matrix[3] +
+      best_homography[4] * transform_matrix[4] +
+      best_homography[7] * transform_matrix[5];
+
+  new_matrix[7] = 
+      best_homography[1] * transform_matrix[6] +
+      best_homography[4] * transform_matrix[7] +
+      best_homography[7] * transform_matrix[8];
+
+
+  new_matrix[2] = 
+      best_homography[2] * transform_matrix[0] +
+      best_homography[5] * transform_matrix[1] +
+      best_homography[8] * transform_matrix[2];
+
+  new_matrix[5] = 
+      best_homography[2] * transform_matrix[3] +
+      best_homography[5] * transform_matrix[4] +
+      best_homography[8] * transform_matrix[5];
+
+  new_matrix[8] = 
+      best_homography[2] * transform_matrix[6] +
+      best_homography[5] * transform_matrix[7] +
+      best_homography[8] * transform_matrix[8];
+
+
+  return new_matrix;
+
 }
 
 
@@ -1067,9 +1255,7 @@ int main(int argc, char **argv)
     else if(part == "part3"){
       double sift_threshold = 0.5;
 
-      // Intial threshold to filter obvious non-matches
       double ransac_threshold = 0.5;
-      // The maximum threshold for a point to be considered an inlier
       double inlier_dist_threshold = 40; 
       double inlier_ratio_threshold = 0.5;
       int number_trials = 100;
@@ -1155,7 +1341,97 @@ int main(int argc, char **argv)
 
     }
     else if(part == "part4"){
-      // Panorama
+      if (argc < 5) {
+        printf("Program Usage ./a2 part5 [images]\n");
+        printf("At least 3 images must be provided\n");
+        exit(0);
+      }
+
+      double ransac_threshold = 0.5;
+      double inlier_dist_threshold = 10; 
+      double inlier_ratio_threshold = 0.7;
+      int number_trials = 100;
+
+      vector<int> height_width;
+
+      Sift sift;
+      vector<SiftDescriptor> transform_to_descriptors;            
+      vector<SiftDescriptor> transform_from_descriptors;
+      vector<int> all_matches;
+
+      CImg<double> base_image;
+      base_image.load(argv[2]);
+      vector<double> best_homography;
+
+      CImg<double> transform_to;
+      CImg<double> transform_from;
+      CImg<double> transformed_image;
+      vector<double> current_transform(0);
+
+      for (int image_num = 3; image_num < argc; image_num++) {
+
+        printf("image_num %d\n", image_num);
+
+        transform_to.load(argv[image_num - 1]);
+        transform_from.load(argv[image_num]);
+
+        transform_to_descriptors = 
+            sift.compute_sift(transform_to);
+        transform_from_descriptors = 
+            sift.compute_sift(transform_from);
+
+        all_matches =
+            find_all_matches(transform_to_descriptors,
+                             transform_from_descriptors,
+                             ransac_threshold);
+
+        best_homography = 
+          get_best_homography(transform_to_descriptors,
+                              transform_from_descriptors,
+                              all_matches,
+                              inlier_dist_threshold,
+                              inlier_ratio_threshold,
+                              number_trials);
+
+        current_transform = 
+            matrix_multiply(best_homography,
+                            current_transform);
+
+        /*
+        for (int i = 0; i < 9; i++) {
+          printf("%f ", best_homography[i]);
+        }
+        printf("\n");
+
+        for (int i = 0; i < 9; i++) {
+          printf("%f ", current_transform[i]);
+        }
+        */
+
+        printf("\n\n");
+
+        height_width =
+            get_height_width(current_transform,
+                             transform_from);
+
+        transformed_image =
+            transform_image(transform_from,
+                            current_transform,
+                            height_width[0],
+                            height_width[1]);
+
+        //base_image.save("base_image.png");
+        //transformed_image.save("transformed_image.png");
+        base_image = merge_images(base_image, transformed_image);
+        //base_image.save("after_transform.png");
+
+        //base_image.save("merged_image.png");
+        //exit(0);
+      }
+
+      base_image.save("panaroma.png");
+
+
     }
     
     
