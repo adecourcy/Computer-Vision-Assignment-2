@@ -23,9 +23,14 @@ For RANSAC, a sift threshold value of 0.5 was also used. We originally tested on
 
 An inlier distance threshold of 40 was used, an inlier ratio threshold of 0.5 was used, and 100 trials were used. More trials seemed to greatly improve RANSAC matches, especially in the case where there were very few good matches. There other parameters were chosen after trial and error. I don't have any intuitive explanation of why they work better than the others we tried, they just did.
 
-Using RANSAC did seem to give noticably better correspondances, but they didn't seem much more than moderately better from my tests and examinations by eye.
+Using RANSAC did seem to give noticably better correspondances, but they didn't seem much more than moderately better from my tests and examinations by eye. RANSAC also seemed to filter out good correspodences.
 
 Our program attempts to output an error message when it is given 2 images with poor correspondances and it can't find any matches. However, there were a lot of edge cases to consider and there may be a few cases in which the program may crash if it is given 2 poorly matching images.
+
+Big Ben with Sift:
+
+Big Ben with RANSAC:
+
 
 **PART 4**
 
@@ -36,6 +41,8 @@ For this part we used a sift threshold of 0.5, an inlier distance threshold of 1
 As we started from the first image and moved to the last image (left to right), the last image would often be heavily skewed. However, the overlaps in the panorama were often very good, even before we introduced an alogrithm to smooth between the edges of the images.
 
 Similar to part 3, the program attempts to give an error and exit gracefully when given poorly matched images, but it does not handle all cases and may crash.
+
+Book panorama without smoothing:
 
 
 
