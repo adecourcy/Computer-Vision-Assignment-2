@@ -11,6 +11,9 @@ Billboard transformation points were calculated manually. The billboard transfor
 
 Homographies were calculated via the matrix in the Burger book.
 
+Billboard overlays:
+
+
 **PART 2**
 
 **PART 3**
