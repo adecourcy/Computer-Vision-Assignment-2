@@ -13,13 +13,16 @@
 #include <vector>
 #include <Sift.h>
 #include <cmath>
+#include <algorithm>
 
 
 //Use the cimg namespace to access functions easily
 using namespace cimg_library;
 using namespace std;
 
-void draw_descriptor_image(CImg<double> image, const vector<SiftDescriptor> descriptors, const char *filename)
+void draw_descriptor_image(CImg<double> image,
+                           const vector<SiftDescriptor> descriptors, 
+                           const char *filename)
 {
   for(unsigned int i=0; i < descriptors.size(); i++)
     {
@@ -699,16 +702,15 @@ CImg<double> draw_lines(CImg<double> combined_image,
 
 
 
-// A REALLY hacky way to generator random numbers
-vector<int> get_random_numbers(int max,
-                               int num_numbers,
-                               CImg<int> random_generator)
+// Get unique set of numbers
+vector<int> get_random_numbers(int num_numbers,
+                               vector<int> random_generator)
 {
-  vector<int> random_numbers;
+  vector<int> random_numbers(4);
+  random_shuffle(random_generator.begin(), random_generator.end());
 
   for (int i = 0; i < num_numbers; i++) {
-    random_generator.rand(0, max);
-    random_numbers.push_back(random_generator(0,0,0,0));
+    random_numbers[i] = random_generator[i];
   }
   return random_numbers;
 
@@ -719,11 +721,11 @@ vector<int> get_random_numbers(int max,
 vector<double> get_random_homography(const vector<SiftDescriptor> &image1_descriptors,
                                      const vector<SiftDescriptor> &image2_descriptors,
                                      const vector<int> &all_matches,
-                                     CImg<int> random_generator)
+                                     vector<int> random_generator)
 {
   int max_value = (all_matches.size() / 2) - 1;
   vector<int> point_indices = 
-      get_random_numbers(max_value, 4, random_generator);
+      get_random_numbers(4, random_generator);
 
 
   vector<double> from_1(2);
@@ -773,22 +775,52 @@ vector<double> get_random_homography(const vector<SiftDescriptor> &image1_descri
                                     from_2, to_2,
                                     from_3, to_3,
                                     from_4, to_4);
+          /*
+  printf("from_1: %f %f\n", from_1[0], from_1[1]);
+  printf("from_2: %f %f\n", from_2[0], from_2[1]);
+  printf("from_3: %f %f\n", from_3[0], from_3[1]);
+  printf("from_4: %f %f\n", from_4[0], from_4[1]);
+
+  printf("to_1: %f %f\n", to_1[0], to_1[1]);
+  printf("to_2: %f %f\n", to_2[0], to_2[1]);
+  printf("to_3: %f %f\n", to_3[0], to_3[1]);
+  printf("to_4: %f %f\n", to_4[0], to_4[1]);
+
+  for (int i = 0; i < transformation_matrix.size(); i++) {
+    printf("%f ", transformation_matrix[i]);
+  }
+  printf("\n");
+
+  //exit(0);
+  */
+
 
   return transformation_matrix;
 }
 
 
 
-double check_inlier(int x_1,
-                    int y_1,
-                    int x_2,
-                    int y_2,
+double check_inlier(double x_1,
+                    double x_2,
+                    double y_1,
+                    double y_2,
                     double inlier_dist_threshold)
 {
+
+  //printf("%f %f\n", x_1, x_2);
+  //printf("%f %f\n", y_1, y_2);
+  //printf("%f %f\n", (x_1 - x_2), (y_1 - y_2));
+
+
+  //printf("%f %f\n", pow((x_1 - x_2), 2.0), pow((y_1 - y_2), 2.0));
+  //printf("%f\n", );
 
   double distance =
         sqrt(pow((x_1 - x_2), 2.0) + 
              pow((y_1 - y_2), 2.0));
+
+  //printf("distance: %f\n", distance);
+  //printf("\n");
 
   if (distance < inlier_dist_threshold) {
     return distance;
@@ -825,13 +857,17 @@ double evaluate_model(const vector<SiftDescriptor> &image1_descriptors,
 
     transformed_pixels = 
         transform_pixel(transformation_matrix,
-                        descriptor_2.col,
-                        descriptor_2.row,
+                        descriptor_1.col,
+                        descriptor_1.row,
                         1.0);
 
-    pixel_distance = check_inlier(descriptor_1.col,
+    //printf("%f %f\n", descriptor_1.col, descriptor_1.row);
+    //printf("%f %f\n", descriptor_2.col, descriptor_2.row);
+    //printf("%f %f\n", transformed_pixels[0], transformed_pixels[1]);
+
+    pixel_distance = check_inlier(descriptor_2.col,
                                   transformed_pixels[0],
-                                  descriptor_1.row,
+                                  descriptor_2.row,
                                   transformed_pixels[1],
                                   inlier_dist_threshold);
 
@@ -841,9 +877,13 @@ double evaluate_model(const vector<SiftDescriptor> &image1_descriptors,
     }
 
   }
+  //printf("total inliers: %d\n", total_inliers);
+  //printf("ratio: %f\n", ((double) total_inliers / (double) (all_matches.size() / 2)));
+
+  //exit(0);
 
   if (((double) total_inliers / (double) (all_matches.size() / 2))
-       > inlier_ratio_threshold) {
+       < inlier_ratio_threshold) {
     return -1.0;
   } else {
     return total_distance;
@@ -867,7 +907,12 @@ vector<double> get_best_homography(const vector<SiftDescriptor> &image1_descript
   vector<double> current_homography;
   double current_distance;
 
-  CImg<int> random_generator(1,1,1,1);
+  int max_bad_models = 4*number_trials;
+
+  vector<int> random_generator(all_matches.size() / 2);
+  for (int i = 0; i < (all_matches.size() / 2); i++) {
+    random_generator[i] = i;
+  }
 
   for (int trial = 0; trial < number_trials; trial++) {
     current_homography = 
@@ -884,10 +929,23 @@ vector<double> get_best_homography(const vector<SiftDescriptor> &image1_descript
                        inlier_dist_threshold,
                        inlier_ratio_threshold);
 
+    if (current_distance == -1.0) {
+      //printf("bad model\n");
+      trial--;
+      max_bad_models--;
+      if (max_bad_models < 0) {
+        best_homography.push_back(-1);
+        return best_homography;
+      }
+      continue;
+    }
+
     if (best_distance == -1.0) {
+      //printf("first model\n");
       best_distance = current_distance;
       best_homography = current_homography;
     } else if (current_distance < best_distance) {
+      //printf("better model\n");
       best_distance = current_distance;
       best_homography = current_homography;
     }
@@ -909,7 +967,8 @@ vector<int> get_inliers(const vector<SiftDescriptor> &image1_descriptors,
   vector<int> inliers;
 
   vector<double> transformed_pixels(2);
-  SiftDescriptor descriptor_1, descriptor_2;
+  SiftDescriptor descriptor_1;
+  SiftDescriptor descriptor_2;
 
   double pixel_distance;
 
@@ -917,20 +976,43 @@ vector<int> get_inliers(const vector<SiftDescriptor> &image1_descriptors,
        match_element < all_matches.size();
        match_element += 2) {
 
+    /*
+    printf("get descriptors\n");
+    printf("match element: %d\n", match_element);
+    printf("all_matches size: %d\n", all_matches.size());
+    printf("image1_descriptors size: %d\n", image1_descriptors.size());
+    printf("image2_descriptors size: %d\n", image2_descriptors.size());
+    printf("all_matches index 1: %d\n", all_matches[match_element]);
+    printf("all_matches index 2: %d\n", all_matches[match_element+1]);
+    */
+
+    //printf("image_1\n");
     descriptor_1 = image1_descriptors[all_matches[match_element]];
+    //printf("image_2\n");
     descriptor_2 = image2_descriptors[all_matches[match_element+1]];
+
+    //descriptor_1 = image1_descriptors[all_matches[match_element]];
+    //descriptor_2 = image2_descriptors[all_matches[match_element+1]];
+
+    //printf("transform_pixels\n");
+    //printf("transform_matrix_size %d\n", transformation_matrix.size());
+    //exit(0);
 
     transformed_pixels = 
         transform_pixel(transformation_matrix,
-                        descriptor_2.col,
-                        descriptor_2.row,
+                        descriptor_1.col,
+                        descriptor_1.row,
                         1.0);
 
-    pixel_distance = check_inlier(descriptor_1.col,
+    //printf("get pixel distance\n");
+
+    pixel_distance = check_inlier(descriptor_2.col,
                                   transformed_pixels[0],
-                                  descriptor_1.row,
+                                  descriptor_2.row,
                                   transformed_pixels[1],
                                   inlier_dist_threshold);
+
+    //printf("check distance\n");
 
     if (pixel_distance != -1.0) {
       inliers.push_back(all_matches[match_element]);
@@ -938,6 +1020,8 @@ vector<int> get_inliers(const vector<SiftDescriptor> &image1_descriptors,
     }
 
   }
+
+  //printf("return inliers\n");
 
   return inliers;
 }
@@ -960,6 +1044,8 @@ int main(int argc, char **argv)
     exit(0);
   */
 
+  srand(unsigned(time(0)));
+
   try {
 
     string part = argv[1];
@@ -979,24 +1065,20 @@ int main(int argc, char **argv)
 
     }
     else if(part == "part3"){
-      double sift_threshold;
-      double ransac_threshold = 0.8;
+      double sift_threshold = 0.5;
 
-     double inlier_dist_threshold;
-     double inlier_ratio_threshold;
-     int number_trials;
+      // Intial threshold to filter obvious non-matches
+      double ransac_threshold = 0.5;
+      // The maximum threshold for a point to be considered an inlier
+      double inlier_dist_threshold = 40; 
+      double inlier_ratio_threshold = 0.5;
+      int number_trials = 100;
 
-      if ((argc != 4) && (argc != 5)) {
-        printf("Program Usage ./a2 part3 [input_image1] [input_image2] [threshold] [inlier_dist_threshold] [inlier_ratio_threshold] [number_trials]\n");
-        printf("The threshold parameter is optional\n");
+      if (argc != 4) {
+        printf("Program Usage ./a2 part3 [input_image1] [input_image2]\n");
         exit(0);
       }
 
-      if (argc == 5) {
-        sift_threshold = strtod(argv[4], NULL);
-      } else {
-        sift_threshold = 0.5;
-      }
       CImg<double> input_image1;
       input_image1.load(argv[2]);
       CImg<double> input_image2;
@@ -1025,6 +1107,19 @@ int main(int argc, char **argv)
 
       sift_matches.save("sift_maches.png");
 
+      //printf("all_matches\n");
+
+      all_matches =
+          find_all_matches(image1_descriptors,
+                           image2_descriptors,
+                           ransac_threshold);
+
+      if (all_matches.size() < 8) {
+        printf("Not enough matches found\n");
+        exit(0);
+      }
+
+      //printf("transformation matrix\n");
 
       vector<double> transformation_matrix = 
           get_best_homography(image1_descriptors,
@@ -1034,12 +1129,20 @@ int main(int argc, char **argv)
                               inlier_ratio_threshold,
                               number_trials);
 
+      if (transformation_matrix.size() == 1) {
+        printf("No good models found\n");
+        exit(0);
+      }
+      //printf("inliers\n");
+
       vector<int> inliers = 
           get_inliers(image1_descriptors,
                       image2_descriptors,
                       all_matches,
                       transformation_matrix,
                       inlier_dist_threshold);
+
+      //printf("ransac matches\n");
 
       CImg<double> ransac_matches =
           draw_lines(combined_image,
