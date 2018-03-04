@@ -48,25 +48,28 @@ vector<CImg<double> > get_gaussian_pyramid(CImg<double> image,
   vector<CImg<double> > gaussian_pyramid(pyramid_size);
   gaussian_pyramid[0] = image;
 
+  if (image.width() % 2 == 1) {
+    image.resize(image.width() - 1, image.width() - 1, 1, 3);
+  }
+
   for (int i = 1; i < pyramid_size; i++) {
 
-   CImg<double> G_prev = gaussian_pyramid[i - 1];
-   int G_prev_rows = G_prev.width();
-   int G_prev_cols = G_prev.height();
+    CImg<double> G_prev = gaussian_pyramid[i - 1];
+    int G_prev_rows = G_prev.width();
+    int G_prev_cols = G_prev.height();
 
-   CImg<double> G_curr = G_prev.get_convolve(filter);
-   // truncating to half size. Maybe we should round??
-   G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3); 
-   gaussian_pyramid[i] = G_curr;
+    CImg<double> G_curr = G_prev.get_convolve(filter);
+    // truncating to half size. Maybe we should round??
+    G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3); 
+    gaussian_pyramid[i] = G_curr;
   }
 
   return gaussian_pyramid;
 }
 
 
-vector<CImg<double> > get_laplacian(vector<CImg<double> > gaussian_pyramid,
-                                    CImg<double> filter,
-                                    int pyramid_size)
+vector<CImg<double> > get_laplacian_pyramid(vector<CImg<double> > gaussian_pyramid,
+                                            CImg<double> filter)
 {
 
   vector<CImg<double> > laplacian_pyramid(gaussian_pyramid.size());
@@ -99,10 +102,13 @@ vector<CImg<double> > get_laplacian_blend(vector<CImg<double> > laplacian_pyrami
 
   int L_counter = laplacian_pyramid_1.size() - 1;
   for (int i = 0; i < laplacian_pyramid_1.size(); i++) {
+    //printf("get vars\n");
     CImg<double> LB_curr(start_size, start_size, 1, 3);
     CImg<double> mask_curr = mask_pyramid[i];
     CImg<double> img1_L_curr = laplacian_pyramid_1[L_counter];
     CImg<double> img2_L_curr = laplacian_pyramid_2[L_counter];
+
+    //printf("iterate images\n");
      
     cimg_forXYC(LB_curr, x, y, c) {
       LB_curr(x, y, c) =
@@ -110,11 +116,53 @@ vector<CImg<double> > get_laplacian_blend(vector<CImg<double> > laplacian_pyrami
           ( (1 - (mask_curr(x, y, 1) / 255.0)) * img2_L_curr(x, y, c) ); 
     }
 
+    //printf("update index\n");
+
     LB[i] = LB_curr;
     L_counter -= 1;
     start_size /= 2;
+
+    //printf("finish\n");
   }
 
+  return LB;
+
+}
+
+
+
+CImg<double> get_blended_image(vector<CImg<double> > laplacian_blend)
+{
+
+    vector<CImg<double> > steps(laplacian_blend.size() - 1);
+    start_size = laplacian_blend[laplacian_blend.size() - 1].width();
+
+    CImg<double> step(start_size, start_size, 1, 3);
+    CImg<double> step_0 = laplacian_blend[5];
+    steps[0] = step_0;
+
+    L_counter = 4;
+    //int sizes[6] = {10, 20, 39, 77, 153, 307};
+    for (int i = 1; i < 5; i++) {
+      CImg<double> prev_step = steps[i-1];
+      start_size *= 2;
+      //int S_prev_rows = prev_step.width();
+      //int S_prev_cols = prev_step.height();
+      CImg<double> curr_step = prev_step.get_resize(start_size, start_size, 1, 3);
+
+      CImg<double> curr_smooth = curr_step.get_convolve(filter * 4);
+      CImg<double> curr_LB = laplacian_blend[L_counter];
+
+      CImg<double> next_step(start_size, start_size, 1, 3); 
+
+      cimg_forXYC(next_step, x, y, c) {
+        next_step(x, y, c) = curr_LB(x, y, c) + curr_smooth(x, y, c); 
+      }
+      steps[i] = next_step;
+      L_counter -= 1;
+    }
+
+  return steps[steps.size() - 1];
 }
 
 
@@ -149,7 +197,6 @@ int main(int argc, char **argv)
       mask.load(mask_str.c_str());
 
       // normalize mask values to be between 0 and 1 instead of 0 and 255
-      mask.get_normalize(0,255);
 
       // 1. For each img, compute the Gaussian pyramid and the Laplacian pyramid
       // Gaussian pyramids
@@ -189,118 +236,90 @@ int main(int argc, char **argv)
        filter(4, 4) = 1.0;
        
        filter /= 256.0;
- 
-       // convolve each image with the filter 5 times to get a total of 6 levels of the pyramid
-       // IMAGE 1 PYRAMID
-       
-       vector<CImg<double> > img1_Gpyr(6);
-       img1_Gpyr[0] = image1;
 
-       for (int i = 1; i < 6; i++) {
+      vector<CImg<double> > image1_gauss_pyramid =
+          get_gaussian_pyramid(image1,
+                               filter,
+                               6);
 
-         CImg<double> G_prev = img1_Gpyr[i - 1];
-         int G_prev_rows = G_prev.width();
-         int G_prev_cols = G_prev.height();
+      vector<CImg<double> > image2_gauss_pyramid =
+          get_gaussian_pyramid(image2,
+                               filter,
+                               6);
 
-         CImg<double> G_curr = G_prev.get_convolve(filter);
-         G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3); 
-         img1_Gpyr[i] = G_curr;
-         G_curr.save("image1_G" + c_str(i) + ".jpg", -1, 6);
+      vector<CImg<double> > mask_gauss_pyramid =
+          get_gaussian_pyramid(mask,
+                               filter,
+                               6);
 
-       }
+      image1_gauss_pyramid[0].save("image_1_gauss_0.png");
+      image1_gauss_pyramid[1].save("image_1_gauss_1.png");
+      image1_gauss_pyramid[2].save("image_1_gauss_2.png");
+      image1_gauss_pyramid[3].save("image_1_gauss_3.png");
+      image1_gauss_pyramid[4].save("image_1_gauss_4.png");
+      image1_gauss_pyramid[5].save("image_1_gauss_5.png");
 
-       //CImg<double> G0_1 = image1;
-       //G0_1.save("image1_G0.jpg", -1, 6);
+      image2_gauss_pyramid[0].save("image_2_gauss_0.png");
+      image2_gauss_pyramid[1].save("image_2_gauss_1.png");
+      image2_gauss_pyramid[2].save("image_2_gauss_2.png");
+      image2_gauss_pyramid[3].save("image_2_gauss_3.png");
+      image2_gauss_pyramid[4].save("image_2_gauss_4.png");
+      image2_gauss_pyramid[5].save("image_2_gauss_5.png");
 
-       // IMAGE 2 PYRAMID
-       
-       vector<CImg<double> > img2_Gpyr(6);
-       img2_Gpyr[0] = image2;
-       for (int i = 1; i < 6; i++) {
-         CImg<double> G_prev = img2_Gpyr[i - 1];
-         int G_prev_rows = G_prev.width();
-         int G_prev_cols = G_prev.height();
-
-         CImg<double> G_curr = G_prev.get_convolve(filter);
-         G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3);
-         img2_Gpyr[i] = G_curr;
-         G_curr.save("image2_G" + c_str(i) + ".jpg", -1, 6);
-       }
-
-
-      // Now the Laplacian pyramids
-      //
-      
-      // IMAGE 1 PYRAMID 
-      //
-
-       vector<CImg<double> > img1_Lpyr(6);
-       img1_Lpyr[0] = img1_Gpyr[5];
-
-       int L_counter = 1;
-       for (int i = 4; i >= 0; i--) {
-         CImg<double> G_curr = img1_Gpyr[i];
-         CImg<double> G_smooth = G_curr.get_convolve(filter);
-         
-         // subtract the smoothed version from the normal to get the Laplacian
-         img1_Lpyr[L_counter] = G_curr - G_smooth;
-         img1_Lpyr[L_counter].save("image1_L" + c_str(L_counter) + ".jpg", -1, 6);
-         L_counter += 1;
-       }
-       
-
-       // IMAGE 2 PYRAMID
+      mask_gauss_pyramid[0].save("mask_gauss_0.png");
+      mask_gauss_pyramid[1].save("mask_gauss_1.png");
+      mask_gauss_pyramid[2].save("mask_gauss_2.png");
+      mask_gauss_pyramid[3].save("mask_gauss_3.png");
+      mask_gauss_pyramid[4].save("mask_gauss_4.png");
+      mask_gauss_pyramid[5].save("mask_gauss_5.png");
 
 
-      vector<CImg<double> > img2_Lpyr(6);
-      img2_Lpyr[0] = img2_Gpyr[5];
-      int L_counter = 1;
-      for (int i = 4; i >= 0; i--) {
-        CImg<double> G_curr = img2_Gpyr[i];
-        CImg<double> G_smooth = G_curr.get_convolve(filter);
+      vector<CImg<double> > image1_lap_pyramid =
+          get_laplacian_pyramid(image1_gauss_pyramid,
+                                filter);
 
-        // subtract the smoothed version from the normal to get the Laplacian
-        img2_Lpyr[L_counter] = G_curr - G_smooth;
-        img2_Lpyr[L_counter].save("image2_L" + c_str(L_counter) + ".jpg", -1, 6);
-        L_counter += 1;
-       }
+      vector<CImg<double> > image2_lap_pyramid =
+           get_laplacian_pyramid(image2_gauss_pyramid,
+                                filter);
 
-      // 2. Build Gaussian for the mask
-      //
-      
-       vector<CImg<double> > mask_Gpyr(6);
-       mask_Gpyr[0] = mask;
+      image1_lap_pyramid[0].save("image_1_lap_0.png");
+      image1_lap_pyramid[1].save("image_1_lap_1.png");
+      image1_lap_pyramid[2].save("image_1_lap_2.png");
+      image1_lap_pyramid[3].save("image_1_lap_3.png");
+      image1_lap_pyramid[4].save("image_1_lap_4.png");
+      image1_lap_pyramid[5].save("image_1_lap_5.png");
 
-       for (int i = 1; i < 6; i++) {
-         CImg<double> G_prev = mask_Gpyr[i - 1];
-         int G_prev_rows = G_prev.width();
-         int G_prev_cols = G_prev.height();
-
-         CImg<double> G_curr = G_prev.get_convolve(filter);
-         G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 1);
-         mask_Gpyr[i] = G_curr;
-         //G_curr.save("image1_G" + c_str(i) + ".jpg", -1, 6);
-       }
+      image2_lap_pyramid[0].save("image_2_lap_0.png");
+      image2_lap_pyramid[1].save("image_2_lap_1.png");
+      image2_lap_pyramid[2].save("image_2_lap_2.png");
+      image2_lap_pyramid[3].save("image_2_lap_3.png");
+      image2_lap_pyramid[4].save("image_2_lap_4.png");
+      image2_lap_pyramid[5].save("image_2_lap_5.png");
 
 
-vector<CImg<double> > LB(6); 
-int start_size = 307;
-int L_counter = 5;
-for (int i = 0; i < 6; i++) {
-  CImg<double> LB_curr(start_size, start_size, 1, 3);
-  CImg<double> mask_curr = mask_Gpyr[i];
-  CImg<double> img1_L_curr = img1_Lpyr[L_counter];
-  CImg<double> img2_L_curr = img2_Lpyr[L_counter];
-   
-  cimg_forXYC(LB_curr, x, y, c) {
-    LB_curr(x, y, c) = ( mask_curr(x, y, c) * img1_L_curr(x, y, c) ) + ( (1 - mask_curr(x, y, c)) * img2_L_curr(x, y, c) ); 
-  }
-  LB[i] = LB_curr;
-  L_counter -= 1;
-  start_size /= 2;
-}
+      vector<CImg<double> > lap_blend_pyramid =
+          get_laplacian_blend(image1_lap_pyramid,
+                              image2_lap_pyramid,
+                              mask_gauss_pyramid);
 
 
+      lap_blend_pyramid[0].save("blend_0.png");
+      lap_blend_pyramid[1].save("blend_1.png");
+      lap_blend_pyramid[2].save("blend_2.png");
+      lap_blend_pyramid[3].save("blend_4.png");
+      lap_blend_pyramid[4].save("blend_5.png");
+      lap_blend_pyramid[5].save("blend_6.png");
+
+      CImg<double> final_blended = 
+          get_blended_image(lap_blend_pyramid);
+
+      exit(0);
+
+
+
+
+
+      /*
       // 4. Form the blended image 
       CImg<double> final_L4(20, 20, 1, 3);
       CImg<double> step1(20, 20, 1, 3);
@@ -345,6 +364,7 @@ for (int i = 0; i < 6; i++) {
         step5(x, y, c) = LB_0(x, y, c) + final_L0(x, y, c);
       }
       step5.save("final_blended.jpg", -1, 6);
+      */
         
     }
     else if(part == "part3"){
