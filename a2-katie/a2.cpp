@@ -67,7 +67,7 @@ int main(int argc, char **argv)
       mask.load(mask_str.c_str());
 
       // normalize mask values to be between 0 and 1 instead of 0 and 255
-      mask.get_normalize(0,255);
+      mask /= 255.0;
 
       // 1. For each img, compute the Gaussian pyramid and the Laplacian pyramid
       // Gaussian pyramids
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
          CImg<double> G_curr = G_prev.get_convolve(filter);
          G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3); 
          img1_Gpyr[i] = G_curr;
-         G_curr.save("image1_G" + c_str(i) + ".jpg", -1, 6);
+         //G_curr.save("image1_G" + c_str(i) + ".jpg", -1, 6);
        }
 
        //CImg<double> G0_1 = image1;
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
          CImg<double> G_curr = G_prev.get_convolve(filter);
          G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3);
          img2_Gpyr[i] = G_curr;
-         G_curr.save("image2_G" + c_str(i) + ".jpg", -1, 6);
+         //G_curr.save("image2_G" + c_str(i) + ".jpg", -1, 6);
        }
 
 /*
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
          
          // subtract the smoothed version from the normal to get the Laplacian
          img1_Lpyr[L_counter] = G_curr - G_smooth;
-         img1_Lpyr[L_counter].save("image1_L" + c_str(L_counter) + ".jpg", -1, 6);
+         //img1_Lpyr[L_counter].save("image1_L" + c_str(L_counter) + ".jpg", -1, 6);
          L_counter += 1;
        }
        
@@ -297,14 +297,14 @@ int main(int argc, char **argv)
 
       vector<CImg<double> > img2_Lpyr(6);
       img2_Lpyr[0] = img2_Gpyr[5];
-      int L_counter = 1;
+      L_counter = 1;
       for (int i = 4; i >= 0; i--) {
         CImg<double> G_curr = img2_Gpyr[i];
         CImg<double> G_smooth = G_curr.get_convolve(filter);
 
         // subtract the smoothed version from the normal to get the Laplacian
         img2_Lpyr[L_counter] = G_curr - G_smooth;
-        img2_Lpyr[L_counter].save("image2_L" + c_str(L_counter) + ".jpg", -1, 6);
+        //img2_Lpyr[L_counter].save("image2_L" + c_str(L_counter) + ".jpg", -1, 6);
         L_counter += 1;
        }
       /*
@@ -410,7 +410,7 @@ int main(int argc, char **argv)
 
 vector<CImg<double> > LB(6); 
 int start_size = 307;
-int L_counter = 5;
+L_counter = 5;
 for (int i = 0; i < 6; i++) {
   CImg<double> LB_curr(start_size, start_size, 1, 3);
   CImg<double> mask_curr = mask_Gpyr[i];
@@ -418,7 +418,7 @@ for (int i = 0; i < 6; i++) {
   CImg<double> img2_L_curr = img2_Lpyr[L_counter];
    
   cimg_forXYC(LB_curr, x, y, c) {
-    LB_curr(x, y, c) = ( mask_curr(x, y, c) * img1_L_curr(x, y, c) ) + ( (1 - mask_curr(x, y, c)) * img2_L_curr(x, y, c) ); 
+    LB_curr(x, y, c) = ( mask_curr(x, y, 1) * img1_L_curr(x, y, c) ) + ( (1 - mask_curr(x, y, c)) * img2_L_curr(x, y, c) ); 
   }
   LB[i] = LB_curr;
   L_counter -= 1;
@@ -468,7 +468,33 @@ for (int i = 0; i < 6; i++) {
       //LB_5 = (G5_mask * L0_1) + ((1 - G5_mask) * L0_2);
       LB_5.save("LB_5.jpg", -1, 6);
 */
-      // 4. Form the blended image 
+      // 4. Form the blended image
+      //
+      vector<CImg<double> > steps(5);
+      //CImg<double> step1(20, 20, 1, 3);
+      CImg<double> step(10, 10, 1, 3);
+      CImg<double> step_0 = LB[5];
+      steps[0] = step+0;
+
+      L_counter = 4;
+      int sizes[6] = {10, 20, 39, 77, 153, 307};
+      for (int i = 1; i < 5; i++) {
+        CImg<double> prev_step = steps[i-1];
+        //int S_prev_rows = prev_step.width();
+        //int S_prev_cols = prev_step.height();
+        CImg<double> curr_step = prev_step.get_resize(sizes[i], sizes[i], 1, 3);
+        CImg<double> curr_smooth = curr_step.get_convolve(filter);
+        CImg<double> curr_LB = LB[L_counter];
+
+        CImg<double> next_step(sizes[i], sizes[i], 1, 3); 
+
+        cimg_forXYC(next_step, x, y, c) {
+          next_step(x, y, c) = curr_LB(x, y, c) + curr_smooth(x, y, c); 
+        }
+        L_counter -= 1;
+      }
+      steps[5].save("final_blended_1.jpg", -1, 6);
+       /*
       CImg<double> final_L4(20, 20, 1, 3);
       CImg<double> step1(20, 20, 1, 3);
       LB_5.resize(20, 20, 1, 3);
@@ -512,7 +538,7 @@ for (int i = 0; i < 6; i++) {
         step5(x, y, c) = LB_0(x, y, c) + final_L0(x, y, c);
       }
       step5.save("final_blended.jpg", -1, 6);
-        
+        */
     }
     else if(part == "part3"){
       // RANSAC
