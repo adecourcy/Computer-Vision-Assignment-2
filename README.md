@@ -43,11 +43,11 @@ For this part we used a sift threshold of 0.5, an inlier distance threshold of 1
 
 As we started from the first image and moved to the last image (left to right), the last image would often be heavily skewed. However, the overlaps in the panorama were often very good, even before we introduced an alogrithm to smooth between the edges of the images.
 
-Similar to part 3, the program attempts to give an error and exit gracefully when given poorly matched images, but it does not handle all cases and may crash.
+Similar to part 3, the program attempts to give an error and exit gracefully when given poorly matched images, but it may not handle all cases and may crash given poorly matched images.
 
 Book panorama without smoothing:
 
-
+Book panorama with smoothing
 
 
 
