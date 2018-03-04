@@ -406,10 +406,11 @@ int main(int argc, char **argv)
 */
 
 vector<CImg<double> > LB(6); 
-int LB_sizes[6] = {307, 153, 77, 39, 20, 10};
+//int LB_sizes[6] = {307, 153, 77, 39, 20, 10};
+int start_size = img1_Lpyr[img1_Lpyr.size() - 1].width();
 L_counter = 5;
 for (int i = 0; i < 6; i++) {
-  CImg<double> LB_curr(LB_sizes[i], LB_sizes[i], 1, 3);
+  CImg<double> LB_curr(start_size, start_size, 1, 3);
   CImg<double> mask_curr = mask_Gpyr[i];
   CImg<double> img1_L_curr = img1_Lpyr[L_counter];
   CImg<double> img2_L_curr = img2_Lpyr[L_counter];
@@ -419,6 +420,7 @@ for (int i = 0; i < 6; i++) {
   }
   LB[i] = LB_curr;
   L_counter -= 1;
+  start_size /= 2;
 }
 
 /* **** OLD : USE ****
@@ -467,22 +469,24 @@ for (int i = 0; i < 6; i++) {
       // 4. Form the blended image
       //
       vector<CImg<double> > steps(5);
-      //CImg<double> step1(20, 20, 1, 3);
-      CImg<double> step(10, 10, 1, 3);
+      start_size = img1_Lpyr[0].width();
+
+      CImg<double> step(start_size, start_size, 1, 3);
       CImg<double> step_0 = LB[5];
       steps[0] = step_0;
 
       L_counter = 4;
-      int sizes[6] = {10, 20, 39, 77, 153, 307};
+      //int sizes[6] = {10, 20, 39, 77, 153, 307};
       for (int i = 1; i < 5; i++) {
         CImg<double> prev_step = steps[i-1];
+        start_size *= 2;
         //int S_prev_rows = prev_step.width();
         //int S_prev_cols = prev_step.height();
-        CImg<double> curr_step = prev_step.get_resize(sizes[i], sizes[i], 1, 3);
+        CImg<double> curr_step = prev_step.get_resize(start_size, start_size, 1, 3);
         CImg<double> curr_smooth = curr_step.get_convolve(filter);
         CImg<double> curr_LB = LB[L_counter];
 
-        CImg<double> next_step(sizes[i], sizes[i], 1, 3); 
+        CImg<double> next_step(start_size, start_size, 1, 3); 
 
         cimg_forXYC(next_step, x, y, c) {
           next_step(x, y, c) = curr_LB(x, y, c) + curr_smooth(x, y, c); 
