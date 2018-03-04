@@ -16,6 +16,20 @@ Billboard overlays:
 
 **PART 2**
 
+We found Part 2 incredibly difficult as well, mostly due to misunderstanding some things about CImg. However, once this was worked out we generated the Gaussian and Laplacian pyramids for each image, the Gaussian for the mask, and then the blended Laplacian pyramid. 
+
+We have two examples of this blending. 
+Example 1: Apple and Orange, using the given mask
+Pyramids:
+Apple:
+
+Orange:
+
+Blended Result:
+
+Example 2: 
+
+
 **PART 3**
 
 Part 3 was implemented in the typical way. The only point of note in our RANSAC implementation is that with regards to the number of model trials, we did not consider a bad model to be a "trial". That is to say that if 10 sets of points are chosen, and 2 sets resulted in poor models, rejected by the algorithm, then the algorithm is only considered to have gone through 8 trials.
