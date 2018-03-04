@@ -66,9 +66,6 @@ int main(int argc, char **argv)
       image2.load(image2_str.c_str());
       mask.load(mask_str.c_str());
 
-      // normalize mask values to be between 0 and 1 instead of 0 and 255
-      mask /= 255.0;
-
       // 1. For each img, compute the Gaussian pyramid and the Laplacian pyramid
       // Gaussian pyramids
       //int rounds = 5;		// this is the number of levels in the Gaussian pyramid
@@ -409,20 +406,19 @@ int main(int argc, char **argv)
 */
 
 vector<CImg<double> > LB(6); 
-int start_size = 307;
+int LB_sizes[6] = {307, 153, 77, 39, 20, 10};
 L_counter = 5;
 for (int i = 0; i < 6; i++) {
-  CImg<double> LB_curr(start_size, start_size, 1, 3);
+  CImg<double> LB_curr(LB_sizes[i], LB_sizes[i], 1, 3);
   CImg<double> mask_curr = mask_Gpyr[i];
   CImg<double> img1_L_curr = img1_Lpyr[L_counter];
   CImg<double> img2_L_curr = img2_Lpyr[L_counter];
    
   cimg_forXYC(LB_curr, x, y, c) {
-    LB_curr(x, y, c) = ( mask_curr(x, y, 1) * img1_L_curr(x, y, c) ) + ( (1 - mask_curr(x, y, c)) * img2_L_curr(x, y, c) ); 
+    LB_curr(x, y, c) = ( (mask_curr(x, y, 1) / 255.0) * img1_L_curr(x, y, c) ) + ( (1 - ( mask_curr(x, y, c) / 255.0)) * img2_L_curr(x, y, c) ); 
   }
   LB[i] = LB_curr;
   L_counter -= 1;
-  start_size /= 2;
 }
 
 /* **** OLD : USE ****
@@ -491,9 +487,10 @@ for (int i = 0; i < 6; i++) {
         cimg_forXYC(next_step, x, y, c) {
           next_step(x, y, c) = curr_LB(x, y, c) + curr_smooth(x, y, c); 
         }
+        steps[i] = next_step;
         L_counter -= 1;
       }
-      steps[5].save("final_blended_1.jpg", -1, 6);
+      steps[4].save("final_blended_1.jpg", -1, 6);
        /*
       CImg<double> final_L4(20, 20, 1, 3);
       CImg<double> step1(20, 20, 1, 3);
