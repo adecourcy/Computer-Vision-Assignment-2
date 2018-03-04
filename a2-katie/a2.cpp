@@ -474,7 +474,7 @@ for (int i = 0; i < 6; i++) {
       //CImg<double> step1(20, 20, 1, 3);
       CImg<double> step(10, 10, 1, 3);
       CImg<double> step_0 = LB[5];
-      steps[0] = step+0;
+      steps[0] = step_0;
 
       L_counter = 4;
       int sizes[6] = {10, 20, 39, 77, 153, 307};
