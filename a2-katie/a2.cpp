@@ -66,6 +66,9 @@ int main(int argc, char **argv)
       image2.load(image2_str.c_str());
       mask.load(mask_str.c_str());
 
+      // normalize mask values to be between 0 and 1 instead of 0 and 255
+      mask.get_normalize(0,255);
+
       // 1. For each img, compute the Gaussian pyramid and the Laplacian pyramid
       // Gaussian pyramids
       //int rounds = 5;		// this is the number of levels in the Gaussian pyramid
@@ -107,61 +110,91 @@ int main(int argc, char **argv)
  
        // convolve each image with the filter 5 times to get a total of 6 levels of the pyramid
        // IMAGE 1 PYRAMID
-       CImg<double> G0_1 = image1;
-       G0_1.save("image1_G0.jpg", -1, 6);
+       
+       vector<CImg<double> > img1_Gpyr(6);
+       img1_Gpyr[0] = image1;
+       for (int i = 1; i < 6; i++) {
+         CImg<double> G_prev = img1_Gpyr[i - 1];
+         int G_prev_rows = G_prev.width();
+         int G_prev_cols = G_prev.height();
 
+         CImg<double> G_curr = G_prev.get_convolve(filter);
+         G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3); 
+         img1_Gpyr[i] = G_curr;
+         G_curr.save("image1_G" + c_str(i) + ".jpg", -1, 6);
+       }
+
+       //CImg<double> G0_1 = image1;
+       //G0_1.save("image1_G0.jpg", -1, 6);
+/*
        CImg<double> G1_1;
        G1_1 = G0_1.get_convolve(filter);
-       G1_1.resize(153, 153);
+       G1_1.resize(153, 153, 1, 3);
        G1_1.save("image1_G1.jpg", -1, 6);
 
        CImg<double> G2_1;
        G2_1 = G1_1.get_convolve(filter);
-       G2_1.resize(77, 77);
+       G2_1.resize(77, 77, 1, 3);
        G2_1.save("image1_G2.jpg", -1, 6);
 
        CImg<double> G3_1;
        G3_1 = G2_1.get_convolve(filter);
-       G3_1.resize(39, 39);
+       G3_1.resize(39, 39, 1, 3);
        G3_1.save("image1_G3.jpg", -1, 6);
 
        CImg<double> G4_1;
        G4_1 = G3_1.get_convolve(filter);
-       G4_1.resize(20, 20);
+       G4_1.resize(20, 20, 1, 3);
        G4_1.save("image1_G4.jpg", -1, 6);
 
        CImg<double> G5_1;
        G5_1 = G4_1.get_convolve(filter);
-       G5_1.resize(10, 10);
+       G5_1.resize(10, 10, 1, 3);
        G5_1.save("image1_G5.jpg", -1, 6);
-
+*/
        // IMAGE 2 PYRAMID
+       
+       vector<CImg<double> > img2_Gpyr(6);
+       img2_Gpyr[0] = image2;
+       for (int i = 1; i < 6; i++) {
+         CImg<double> G_prev = img2_Gpyr[i - 1];
+         int G_prev_rows = G_prev.width();
+         int G_prev_cols = G_prev.height();
+
+         CImg<double> G_curr = G_prev.get_convolve(filter);
+         G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3);
+         img2_Gpyr[i] = G_curr;
+         G_curr.save("image2_G" + c_str(i) + ".jpg", -1, 6);
+       }
+
+/*
        CImg<double> G0_2 = image2;
        CImg<double> G1_2;
        G1_2 = G0_2.get_convolve(filter);
-       G1_2.resize(153, 153);
+       G1_2.resize(153, 153, 1, 3);
        G1_2.save("image2_G1.jpg", -1, 6);
 
        CImg<double> G2_2;
        G2_2 = G1_2.get_convolve(filter);
-       G2_2.resize(77, 77);
+       G2_2.resize(77, 77, 1, 3);
        G2_2.save("image2_G2.jpg", -1, 6);
 
        CImg<double> G3_2;
        G3_2 = G2_2.get_convolve(filter);
-       G3_2.resize(39, 39);
+       G3_2.resize(39, 39, 1, 3);
        G3_2.save("image2_G3.jpg", -1, 6);
 
        CImg<double> G4_2;
        G4_2 = G3_2.get_convolve(filter);
-       G4_2.resize(20, 20);
+       G4_2.resize(20, 20, 1, 3);
        G4_2.save("image2_G4.jpg", -1, 6);
 
        CImg<double> G5_2;
        G5_2 = G4_2.get_convolve(filter);
-       G5_2.resize(10, 10);
+       G5_2.resize(10, 10, 1, 3);
        G5_2.save("image2_G5.jpg", -1, 6);
-       /*
+       
+///// OLD
        std::string filename = "image1_G";
        
        CImg<double>[] levels(6); 	// store all the levels of the pyramid here
@@ -176,13 +209,27 @@ int main(int argc, char **argv)
       //
       
       // IMAGE 1 PYRAMID 
+      //
+
+       vector<CImg<double> > img1_Lpyr(6);
+       img1_Lpyr[0] = img1_Gpyr[5];
+       int L_counter = 1;
+       for (int i = 4; i >= 0; i--) {
+         CImg<double> G_curr = img1_Gpyr[i];
+         CImg<double> G_smooth = G_curr.get_convolve(filter);
+         
+         // subtract the smoothed version from the normal to get the Laplacian
+         img1_Lpyr[L_counter] = G_curr - G_smooth;
+         img1_Lpyr[L_counter].save("image1_L" + c_str(L_counter) + ".jpg", -1, 6);
+         L_counter += 1;
+       }
+       
+
+/*
       CImg<double> L0_1(10, 10, 1, 3);
       L0_1 = G5_1;
       L0_1.save("image1_L0.jpg", -1, 6);
 
-      //CImg<double> smooth0_1 = G0_1.get_convolve(filter);
-      //L0_1 = G0_1 - smooth0_1;
-      //L0_1.save("image1_L0.jpg", -1, 6);
 
       CImg<double> L1_1(20, 20, 1, 3);
       CImg<double> smooth1_1 = G4_1.get_convolve(filter);
@@ -209,7 +256,7 @@ int main(int argc, char **argv)
       L5_1 = G0_1 - smooth5_1;
       L5_1.save("image1_L5.jpg", -1, 6);
       //CImg<double> resized_G5_1;
-      /*
+      
       resized_G5_1 = G5_1.get_resize_doubleXY();
       resized_G5_1.save("image1_resized_test.jpg", -1, 6);
       for(int i=0; i < resized_G5_1.width(); i++) {
@@ -246,6 +293,21 @@ int main(int argc, char **argv)
       L0_3_test.save("image1_hopefully_3.jpg", -1, 6);
 */
        // IMAGE 2 PYRAMID
+
+
+      vector<CImg<double> > img2_Lpyr(6);
+      img2_Lpyr[0] = img2_Gpyr[5];
+      int L_counter = 1;
+      for (int i = 4; i >= 0; i--) {
+        CImg<double> G_curr = img2_Gpyr[i];
+        CImg<double> G_smooth = G_curr.get_convolve(filter);
+
+        // subtract the smoothed version from the normal to get the Laplacian
+        img2_Lpyr[L_counter] = G_curr - G_smooth;
+        img2_Lpyr[L_counter].save("image2_L" + c_str(L_counter) + ".jpg", -1, 6);
+        L_counter += 1;
+       }
+      /*
       CImg<double> L0_2(10, 10, 1, 3);
       L0_2 = G5_2;
       L0_2.save("image2_L0.jpg", -1, 6);
@@ -274,34 +336,49 @@ int main(int argc, char **argv)
       CImg<double> smooth5_2 = G0_2.get_convolve(filter);
       L5_2 = G0_2 - smooth5_2;
       L5_2.save("image2_L5.jpg", -1, 6);
+*/
+      // 2. Build Gaussian for the mask
+      //
+      
+       vector<CImg<double> > mask_Gpyr(6);
+       mask_Gpyr[0] = mask;
+       for (int i = 1; i < 6; i++) {
+         CImg<double> G_prev = mask_Gpyr[i - 1];
+         int G_prev_rows = G_prev.width();
+         int G_prev_cols = G_prev.height();
 
-      // 2. Build Gaussian for the mask    
+         CImg<double> G_curr = G_prev.get_convolve(filter);
+         G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 1);
+         mask_Gpyr[i] = G_curr;
+         //G_curr.save("image1_G" + c_str(i) + ".jpg", -1, 6);
+       }
+    /*
        CImg<double> G0_mask = mask;
        CImg<double> G1_mask;
        G1_mask = G0_mask.get_convolve(filter);
-       G1_mask.resize(153, 153);
+       G1_mask.resize(153, 153, 1, 1);
        G1_mask.save("mask_G1.jpg", -1, 6);
 
        CImg<double> G2_mask;
        G2_mask = G1_mask.get_convolve(filter);
-       G2_mask.resize(77, 77);
+       G2_mask.resize(77, 77, 1, 1);
        G2_mask.save("mask_G2.jpg", -1, 6);
 
        CImg<double> G3_mask;
        G3_mask = G2_mask.get_convolve(filter);
-       G3_mask.resize(39, 39);
+       G3_mask.resize(39, 39, 1, 1);
        G3_mask.save("mask_G3.jpg", -1, 6);
 
        CImg<double> G4_mask;
        G4_mask = G3_mask.get_convolve(filter);
-       G4_mask.resize(20, 20);
+       G4_mask.resize(20, 20, 1, 1);
        G4_mask.save("mask_G4.jpg", -1, 6);
 
        CImg<double> G5_mask;
        G5_mask = G4_mask.get_convolve(filter);
-       G5_mask.resize(10, 10);
+       G5_mask.resize(10, 10, 1, 1);
        G5_mask.save("mask_G5.jpg", -1, 6);
-
+*/
       // 3. Blended Laplacian pyramid
       //  - sum of images in corresponding level of the two images
       //  - formula used in given in assignment
@@ -330,95 +407,109 @@ int main(int argc, char **argv)
         }
       }
 */
+
+vector<CImg<double> > LB(6); 
+int start_size = 307;
+int L_counter = 5;
+for (int i = 0; i < 6; i++) {
+  CImg<double> LB_curr(start_size, start_size, 1, 3);
+  CImg<double> mask_curr = mask_Gpyr[i];
+  CImg<double> img1_L_curr = img1_Lpyr[L_counter];
+  CImg<double> img2_L_curr = img2_Lpyr[L_counter];
+   
+  cimg_forXYC(LB_curr, x, y, c) {
+    LB_curr(x, y, c) = ( mask_curr(x, y, c) * img1_L_curr(x, y, c) ) + ( (1 - mask_curr(x, y, c)) * img2_L_curr(x, y, c) ); 
+  }
+  LB[i] = LB_curr;
+  L_counter -= 1;
+  start_size /= 2;
+}
+
+/* **** OLD : USE ****
       CImg<double> LB_0(307, 307, 1, 3);
-      cimg_forXY(LB_0, x, y) {
-        LB_0(x, y) = ( G0_mask(x, y) * L5_1(x, y) ) + ( (1 - G0_mask(x, y)) * L5_2(x, y) );
+      cimg_forXYC(LB_0, x, y, c) {
+        LB_0(x, y, c) = ( G0_mask(x, y, c) * L5_1(x, y, c) ) + ( (1 - G0_mask(x, y, c)) * L5_2(x, y, c) );
       }
+      //LB_0 = (G0_mask * L5_1) + ((1 - G0_mask) * L5_2);
       LB_0.save("LB_0.jpg", -1, 6);
 
       CImg<double> LB_1(153, 153, 1, 3);
-      cimg_forXY(LB_1, x, y) {
-        LB_1(x, y) = ( G1_mask(x, y) * L4_1(x, y) ) + ( (1 - G1_mask(x, y)) * L4_2(x, y) );
+      cimg_forXYC(LB_1, x, y, c) {
+        LB_1(x, y, c) = ( G1_mask(x, y, c) * L4_1(x, y, c) ) + ( (1 - G1_mask(x, y, c)) * L4_2(x, y, c) );
       }
+      //LB_1 = (G1_mask * L4_1) + ((1 - G1_mask) * L4_2);
       LB_1.save("LB_1.jpg", -1, 6);
 
       CImg<double> LB_2(77, 77, 1, 3);
-      cimg_forXY(LB_2, x, y) {
-        LB_2(x, y) = ( G2_mask(x, y) * L3_1(x, y) ) + ( (1 - G2_mask(x, y)) * L3_2(x, y) );
+      cimg_forXYC(LB_2, x, y, c) {
+        LB_2(x, y, c) = ( G2_mask(x, y, c) * L3_1(x, y, c) ) + ( (1 - G2_mask(x, y, c)) * L3_2(x, y, c) );
       }
+      //LB_2 = (G2_mask * L3_1) + ((1 - G2_mask) * L3_2);
       LB_2.save("LB_2.jpg", -1, 6);
 
       CImg<double> LB_3(39, 39, 1, 3);
-      cimg_forXY(LB_3, x, y) {
-        LB_3(x, y) = ( G3_mask(x, y) * L2_1(x, y) ) + ( (1 - G3_mask(x, y)) * L2_2(x, y) );
+      cimg_forXYC(LB_3, x, y, c) {
+        LB_3(x, y, c) = ( G3_mask(x, y, c) * L2_1(x, y, c) ) + ( (1 - G3_mask(x, y, c)) * L2_2(x, y, c) );
       }
+      //LB_3 = (G3_mask * L2_1) + ((1 - G3_mask) * L2_2);
       LB_3.save("LB_3.jpg", -1, 6);
  
       CImg<double> LB_4(20, 20, 1, 3);
-      cimg_forXY(LB_4, x, y) {
-        LB_4(x, y) = ( G4_mask(x, y) * L1_1(x, y) ) + ( (1 - G4_mask(x, y)) * L1_2(x, y) );
+      cimg_forXYC(LB_4, x, y, c) {
+        LB_4(x, y, c) = ( G4_mask(x, y, c) * L1_1(x, y, c) ) + ( (1 - G4_mask(x, y, c)) * L1_2(x, y, c) );
       }
+      //LB_4 = (G4_mask * L1_1) + ((1 - G4_mask) * L1_2);
       LB_4.save("LB_4.jpg", -1, 6);
 
       CImg<double> LB_5(10, 10, 1, 3);
-      cimg_forXY(LB_5, x, y) {
-        LB_5(x, y) = ( G5_mask(x, y) * L0_1(x, y) ) + ( (1 - G5_mask(x, y)) * L0_2(x, y) );
+      cimg_forXYC(LB_5, x, y, c) {
+        LB_5(x, y, c) = ( G5_mask(x, y, c) * L0_1(x, y, c) ) + ( (1 - G5_mask(x, y, c)) * L0_2(x, y, c) );
       }
+      //LB_5 = (G5_mask * L0_1) + ((1 - G5_mask) * L0_2);
       LB_5.save("LB_5.jpg", -1, 6);
-
+*/
       // 4. Form the blended image 
-      CImg<double> resized_LB_5(20, 20);
-      CImg<double> final_L4(20, 20);
-      CImg<double> step1(20, 20);
-      resized_LB_5 = LB_5.get_resize_doubleXY();
-      cout << "Dimensions: Width " << resized_LB_5.width() << " and Height: " << resized_LB_5.height() << endl;
-      final_L4 = resized_LB_5.get_convolve(filter);
-      cimg_forXY(step1, x, y) {
-        step1(x, y) = LB_4(x, y) + final_L4(x, y);
+      CImg<double> final_L4(20, 20, 1, 3);
+      CImg<double> step1(20, 20, 1, 3);
+      LB_5.resize(20, 20, 1, 3);
+      final_L4 = LB_5.get_convolve(filter);
+      cimg_forXYC(step1, x, y, c) {
+        step1(x, y, c) = LB_4(x, y, c) + final_L4(x, y, c);
       } 
 
-      CImg<double> resized_LB_4(40, 40);
-      CImg<double> final_L3(39, 39);
-      CImg<double> step2(39, 39);
-      resized_LB_4 = LB_4.get_resize_doubleXY();
-      resized_LB_4.resize(39, 39);
-      cout << "Dimensions: Width " << resized_LB_4.width() << " and Height: " << resized_LB_4.height() << endl;
-      final_L3 = resized_LB_4.get_convolve(filter);
-      cimg_forXY(step2, x, y) {
-        step2(x, y) = LB_3(x, y) + final_L3(x, y);
+      //CImg<double> resized_step1(40, 40, 1, 3);
+      CImg<double> final_L3(39, 39, 1, 3);
+      CImg<double> step2(39, 39, 1, 3);
+      step1.resize(39, 39, 1, 3);
+      final_L3 = step1.get_convolve(filter);
+      cimg_forXYC(step2, x, y, c) {
+        step2(x, y, c) = LB_3(x, y, c) + final_L3(x, y, c);
+      }   
+      
+      CImg<double> final_L2(77, 77, 1, 3);
+      CImg<double> step3(77, 77, 1, 3);
+      step2.resize(77, 77, 1, 3);
+      final_L2 = step2.get_convolve(filter);
+      cimg_forXYC(step3, x, y, c) {
+        step3(x, y, c) = LB_2(x, y, c) + final_L2(x, y, c);
+      }
+      
+      //CImg<double> resized_step3(154, 154, 1, 3);
+      CImg<double> final_L1(153, 153, 1, 3);
+      CImg<double> step4(153, 153, 1, 3);
+      step3.resize(153, 153, 1, 3);
+      final_L1 = step3.get_convolve(filter);
+      cimg_forXYC(step4, x, y, c) {
+        step4(x, y, c) = LB_1(x, y, c) + final_L1(x, y, c);
       }
 
-      CImg<double> resized_LB_3(78, 78);
-      CImg<double> final_L2(77, 77);
-      CImg<double> step3(77, 77);
-      resized_LB_3 = LB_4.get_resize_doubleXY();
-      resized_LB_3.resize(77, 77);
-      cout << "Dimensions: Width " << resized_LB_3.width() << " and Height: " << resized_LB_3.height() << endl;
-      final_L2 = resized_LB_3.get_convolve(filter);
-      cimg_forXY(step3, x, y) {
-        step3(x, y) = LB_2(x, y) + final_L2(x, y);
-      }
-
-      CImg<double> resized_LB_2(154, 154);
-      CImg<double> final_L1(153, 153);
-      CImg<double> step4(153, 153);
-      resized_LB_2 = LB_3.get_resize_doubleXY();
-      resized_LB_2.resize(153, 153);
-      cout << "Dimensions: Width " << resized_LB_2.width() << " and Height: " << resized_LB_2.height() << endl;
-      final_L1 = resized_LB_2.get_convolve(filter);
-      cimg_forXY(step2, x, y) {
-        step2(x, y) = LB_1(x, y) + final_L1(x, y);
-      }
-
-      CImg<double> resized_LB_1(306, 306);
-      CImg<double> final_L0(307, 307);
-      CImg<double> step5(307, 307);
-      resized_LB_1 = LB_4.get_resize_doubleXY();
-      resized_LB_1.resize(307, 307);
-      cout << "Dimensions: Width " << resized_LB_1.width() << " and Height: " << resized_LB_1.height() << endl;
-      final_L0 = resized_LB_1.get_convolve(filter);
-      cimg_forXY(step5, x, y) {
-        step5(x, y) = LB_0(x, y) + final_L0(x, y);
+      //CImg<double> resized_step4(306, 306, 1, 3);
+      CImg<double> final_L0(307, 307, 1, 3);
+      CImg<double> step5(307, 307, 1, 3);
+      step4.resize(307, 307, 1, 3);
+      final_L0 = step4.get_convolve(filter);
+      cimg_forXYC(step5, x, y, c) {
+        step5(x, y, c) = LB_0(x, y, c) + final_L0(x, y, c);
       }
       step5.save("final_blended.jpg", -1, 6);
         
