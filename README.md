@@ -17,6 +17,8 @@ Billboard overlays:
 
 We found Part 2 incredibly difficult as well, mostly due to misunderstanding some things about CImg. However, once this was worked out we generated the Gaussian and Laplacian pyramids for each image, the Gaussian for the mask, and then the blended Laplacian pyramid. 
 
+
+
 We have two examples of this blending. 
 ### Example 1: Apple and Orange, using the given mask
 #### Pyramids:
@@ -93,10 +95,11 @@ Using RANSAC did seem to give noticably better correspondances, but they didn't 
 
 Our program attempts to output an error message when it is given 2 images with poor correspondances and it can't find any matches. However, there were a lot of edge cases to consider and there may be a few cases in which the program may crash if it is given 2 poorly matching images.
 
-Big Ben with Sift:
+##### Big Ben with Sift:
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/sift%20-%20Big%20Ben.png)
 
-Big Ben with RANSAC:
-
+##### Big Ben with RANSAC:
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/ransac%20-%20Big%20Ben.png)
 
 ## Part 4
 We leveraged our previous functions to build up our panorama. We used the first image given by command-line argument as the "base" image, and transformed all other images to that coordinate system. We did this by multiplication of subsequent homographies. To be clear, a homography was created between image 1 and image 2, and image 2 was transformed with this homography. Next, a homography was created between the untransformed image 2 and image 3. This homography was multiplied with the previous homography, and image 3 was transformed with the resulting matrix. If there were more than 3 images, the procedure was continued as described. At each step, newly the transformed image and all previously transformed images were combined together.
@@ -107,9 +110,10 @@ As we started from the first image and moved to the last image (left to right), 
 
 Similar to part 3, the program attempts to give an error and exit gracefully when given poorly matched images, but it may not handle all cases and may crash given poorly matched images.
 
-Book panorama without smoothing:
+##### Book panorama without smoothing:
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panaroma%20books%20-%20no%20stitch.png)
 
-Book panorama with smoothing
+##### Book panorama with smoothing
 
 
 
