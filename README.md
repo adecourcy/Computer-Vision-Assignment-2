@@ -11,13 +11,19 @@ Billboard transformation points were calculated manually. The billboard transfor
 
 Homographies were calculated via the matrix in the Burger book.
 
-Billboard overlays:
+##### Billboard overlays:
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/overlay_1.jpg)
+
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/overlay_2.jpg)
+
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/overlay_3.jpg)
 
 ## Part 2
 
 We found Part 2 incredibly difficult as well, mostly due to misunderstanding some things about CImg. However, once this was worked out we generated the Gaussian and Laplacian pyramids for each image, the Gaussian for the mask, and then the blended Laplacian pyramid. 
 
-
+The steps we followed are as follows:
+1. We created the Gaussian and Laplacian pyramids for each image, as well as the Gaussian 
 
 We have two examples of this blending. 
 ### Example 1: Apple and Orange, using the given mask
