@@ -11,7 +11,7 @@ Billboard transformation points were calculated manually. The billboard transfor
 
 Homographies were calculated via the matrix in the Burger book.
 
-##### Billboard overlays:
+#### Billboard overlays:
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/overlay_1.jpg)
 
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/overlay_2.jpg)
@@ -103,10 +103,10 @@ Using RANSAC did seem to give noticably better correspondances, but they didn't 
 
 Our program attempts to output an error message when it is given 2 images with poor correspondances and it can't find any matches. However, there were a lot of edge cases to consider and there may be a few cases in which the program may crash if it is given 2 poorly matching images.
 
-##### Big Ben with Sift:
+#### Big Ben with Sift:
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/sift%20-%20Big%20Ben.png)
 
-##### Big Ben with RANSAC:
+#### Big Ben with RANSAC:
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/ransac%20-%20Big%20Ben.png)
 
 ## Part 4
@@ -118,10 +118,10 @@ As we started from the first image and moved to the last image (left to right), 
 
 Similar to part 3, the program attempts to give an error and exit gracefully when given poorly matched images, but it may not handle all cases and may crash given poorly matched images.
 
-##### Book panorama without smoothing:
+#### Book panorama without smoothing:
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panaroma%20books%20-%20no%20stitch.png)
 
-##### Book panorama with smoothing
+#### Book panorama with smoothing
 
 
 
