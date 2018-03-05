@@ -30,7 +30,7 @@ The steps we followed are as follows:
 We have two examples of this blending. 
 
 ### Example 1: Apple and Orange, using the given mask
-##### Apple Gaussians:
+#### Apple Gaussians:
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/images/part2/apple.jpg)
 
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_G1.jpg)
@@ -43,7 +43,7 @@ We have two examples of this blending.
 
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_G5.jpg)
 
-##### Apple Laplacians:
+#### Apple Laplacians:
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_L0.jpg)
 
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_L1.jpg)
@@ -56,7 +56,7 @@ We have two examples of this blending.
 
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_L5.jpg)
 
-##### Orange Gaussians:
+#### Orange Gaussians:
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/images/part2/orange.jpg)
 
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_G1.jpg)
@@ -69,7 +69,7 @@ We have two examples of this blending.
 
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_G5.jpg)
 
-##### Orange Laplacians:
+#### Orange Laplacians:
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L0.jpg)
 
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L1.jpg)
@@ -85,7 +85,7 @@ We have two examples of this blending.
 We had a tough time producing the blended result. Here are some of the bad results we got:
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/final_blended_mistake1.jpg)
 
-##### Blended Result:
+#### Blended Result:
 
 ### Example 2: 
 
