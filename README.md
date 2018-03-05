@@ -72,9 +72,12 @@ We have two examples of this blending.
 
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L5.jpg)
 
-Blended Result:
+We had a tough time producing the blended result. Here are some of the bad results we got:
 
-Example 2: 
+
+##### Blended Result:
+
+### Example 2: 
 
 
 ## Part 3
