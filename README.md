@@ -28,7 +28,7 @@ The steps we followed are as follows:
 
 This part was not difficult, however we were not given enough information to complete the problem correctly. Examples of some of the blended images we generated can be found below, but we didn't end up getting the final correct blended image. We had to construct a series of hacks for this problem (normalizing several times, somewhat randomly, multiplying the convolution kernel by 4, dealing with issues in upscaling and downscaling) that were not mentioned in the assignment, causing us to not be able to find where the issue in the series of hacks was. We also tried two different methods of upscaling and downscaling: 1) using CImg's resize() method, and 2) creating our own upscale/downscale, and neither of those worked.
 
-It would have been helpful to have example images for what our Gaussians, Laplacians, and Blended levels should've looked like, because we spent a long time trying to figure out if our Gaussians and Laplacians looked like they should've. 
+It would have been helpful to have example images for what our Gaussians, Laplacians, and Blended levels should've looked like, because we spent a long time trying to figure out if our Gaussians and Laplacians looked like they should've. We spent at least 30 hours (and that is a modest estimate - it was probably more) working on Part 2 alone, mostly due to the unclear instructions.
 
 ### Example: Apple and Orange, using the given mask
 #### Apple Gaussians:
