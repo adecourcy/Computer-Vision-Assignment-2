@@ -19,7 +19,6 @@ Homographies were calculated via the matrix in the Burger book.
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/overlay_3.jpg)
 
 ## Part 2
-
 We found Part 2 incredibly difficult as well, mostly due to misunderstanding some things about CImg. However, once this was worked out we generated the Gaussian and Laplacian pyramids for each image, the Gaussian for the mask, and then the blended Laplacian pyramid. 
 
 The steps we followed are as follows:
@@ -27,9 +26,11 @@ The steps we followed are as follows:
 2. We then created the blended Laplacian pyramid, using the equation from the PDF to weight the images based on the mask values.
 3. After that, we simply (not simple!!) combined the layers of the Laplacian pyramid to get our final blended image.
 
-We have two examples of this blending. 
+This part was not difficult, however we were not given enough information to complete the problem correctly. Examples of some of the blended images we generated can be found below, but we didn't end up getting the final correct blended image. We had to construct a series of hacks for this problem (normalizing several times, somewhat randomly, multiplying the convolution kernel by 4, dealing with issues in upscaling and downscaling) that were not mentioned in the assignment, causing us to not be able to find where the issue in the series of hacks was. We also tried two different methods of upscaling and downscaling: 1) using CImg's resize() method, and 2) creating our own upscale/downscale, and neither of those worked.
 
-### Example 1: Apple and Orange, using the given mask
+It would have been helpful to have example images for what our Gaussians, Laplacians, and Blended levels should've looked like, because we spent a long time trying to figure out if our Gaussians and Laplacians looked like they should've. 
+
+### Example: Apple and Orange, using the given mask
 #### Apple Gaussians:
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/images/part2/apple.jpg)
 
@@ -91,8 +92,6 @@ This result was closer, but blurrier:
 
 #### Blended Result:
 
-### Example 2: 
-
 
 ## Part 3
 Part 3 was implemented in the typical way. The only point of note in our RANSAC implementation is that with regards to the number of model trials, we did not consider a bad model to be a "trial". That is to say that if 10 sets of points are chosen, and 2 sets resulted in poor models, rejected by the algorithm, then the algorithm is only considered to have gone through 8 trials.
@@ -126,7 +125,7 @@ Similar to part 3, the program attempts to give an error and exit gracefully whe
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panaroma%20books%20-%20no%20stitch.png)
 
 #### Book panorama with smoothing
-
+We had a lot of issues with Part 2 so we didn't have a chance to add smoothing to this part. 
 
 
 
