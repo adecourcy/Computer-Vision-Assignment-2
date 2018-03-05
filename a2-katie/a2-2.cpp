@@ -140,12 +140,12 @@ CImg<double> get_blended_image(vector<CImg<double> > laplacian_blend,
 
     CImg<double> step(start_size, start_size, 1, 3);
     CImg<double> step_0 = laplacian_blend[laplacian_blend.size() - 1];
-    steps[0] = step_0;
+    //steps[0] = step_0;
 
     int L_counter = laplacian_blend.size() - 2;
     //int sizes[6] = {10, 20, 39, 77, 153, 307};
-    for (int i = 1; i < 5; i++) {
-      CImg<double> prev_step = steps[i-1];
+    for (int i = 0; i < 5; i++) {
+      CImg<double> prev_step = laplacian_blend[L_counter + 1];
       start_size = laplacian_blend[L_counter].width();
       //int S_prev_rows = prev_step.width();
       //int S_prev_cols = prev_step.height();
@@ -163,7 +163,7 @@ CImg<double> get_blended_image(vector<CImg<double> > laplacian_blend,
       L_counter -= 1;
     }
 
-  return steps[steps.size() - 1];
+  return steps[steps.size() - 1].normalize(0,255);
 }
 
 
