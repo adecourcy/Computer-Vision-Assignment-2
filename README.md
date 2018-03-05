@@ -23,11 +23,13 @@ Homographies were calculated via the matrix in the Burger book.
 We found Part 2 incredibly difficult as well, mostly due to misunderstanding some things about CImg. However, once this was worked out we generated the Gaussian and Laplacian pyramids for each image, the Gaussian for the mask, and then the blended Laplacian pyramid. 
 
 The steps we followed are as follows:
-1. We created the Gaussian and Laplacian pyramids for each image, as well as the Gaussian 
+1. We created the Gaussian and Laplacian pyramids for each image, as well as the Gaussian pyramid for the mask.
+2. We then created the blended Laplacian pyramid, using the equation from the PDF to weight the images based on the mask values.
+3. After that, we simply (not simple!!) combined the layers of the Laplacian pyramid to get our final blended image.
 
 We have two examples of this blending. 
+
 ### Example 1: Apple and Orange, using the given mask
-#### Pyramids:
 ##### Apple Gaussians:
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/images/part2/apple.jpg)
 
@@ -81,7 +83,7 @@ We have two examples of this blending.
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L5.jpg)
 
 We had a tough time producing the blended result. Here are some of the bad results we got:
-
+![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/final_blended_mistake1.jpg)
 
 ##### Blended Result:
 
