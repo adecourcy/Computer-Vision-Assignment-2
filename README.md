@@ -90,9 +90,6 @@ Here's a pretty one:
 This result was closer, but blurrier:  
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/blend_try1.png)
 
-#### Blended Result:
-
-
 ## Part 3
 Part 3 was implemented in the typical way. The only point of note in our RANSAC implementation is that with regards to the number of model trials, we did not consider a bad model to be a "trial". That is to say that if 10 sets of points are chosen, and 2 sets resulted in poor models, rejected by the algorithm, then the algorithm is only considered to have gone through 8 trials.
 
@@ -125,7 +122,7 @@ Similar to part 3, the program attempts to give an error and exit gracefully whe
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panaroma%20books%20-%20no%20stitch.png)
 
 #### Book panorama with smoothing
-We had a lot of issues with Part 2 so we didn't have a chance to add smoothing to this part. 
+We had a lot of issues with Part 2 so we didn't have a chance to add smoothing to this part. However, we do have code (currently in a2.cpp but commented out - please see a2.cpp, Part 4) to add in the smoothing part, we just didn't get Part 2 working so unfortunatley we didn't have a chance to use the code we wrote. 
 
 
 
