@@ -87,7 +87,7 @@ Here's a pretty one:
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/final_blended_mistake1.jpg)
 
 This result was closer, but blurrier:
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/a2-katie/blend_try1.png)
+![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/blend_try1.png)
 
 #### Blended Result:
 
