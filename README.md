@@ -120,11 +120,11 @@ As we started from the first image and moved to the last image (left to right), 
 
 Similar to part 3, the program attempts to give an error and exit gracefully when given poorly matched images, but it may not handle all cases and may crash given poorly matched images.
 
-#### Book panorama without smoothing:
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panaroma%20books%20-%20no%20stitch.png)
-
 #### Book panorama with smoothing
 We had a lot of issues with Part 2 so we didn't have a chance to add smoothing to this part. However, we do have code (currently in a2.cpp but commented out - please see a2.cpp, Part 4) to add in the smoothing part, we just didn't get Part 2 working so unfortunatley we didn't have a chance to use the code we wrote. 
+
+#### Book panorama without smoothing:
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panaroma%20books%20-%20no%20stitch.png)
 
 
 
