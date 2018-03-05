@@ -81,9 +81,13 @@ We have two examples of this blending.
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L4.jpg)
 
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L5.jpg)
-
-We had a tough time producing the blended result. Here are some of the bad results we got:
+ 
+We had a tough time producing the blended result. Here are some of the bad results we got:  
+Here's a pretty one:
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/final_blended_mistake1.jpg)
+
+This result was closer, but blurrier:
+![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/a2-katie/blend_try1.png)
 
 #### Blended Result:
 
