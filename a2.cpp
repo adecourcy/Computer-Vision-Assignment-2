@@ -43,7 +43,11 @@ void draw_descriptor_image(CImg<double> image,
 }
 
 
-
+/*
+  Given a pixel and a matrix, transform that pixel to the new coordinate set
+  Returns a 2 value vector, the first value being the new x-coordinate, the
+  second being the new y-coordinate
+*/
 vector<double> transform_pixel(const vector<double> &transformation_matrix,
                                int x,
                                int y,
@@ -52,10 +56,12 @@ vector<double> transform_pixel(const vector<double> &transformation_matrix,
   vector<double> coordinates(2);
   double new_z;
 
+  // First calculate the new z value
   new_z = ((double) x) * transformation_matrix[6] + 
           ((double) y) * transformation_matrix[7] +
           z * transformation_matrix[8];
 
+  // Then calculate our new normalized x and y values
   coordinates[0] = (((double) x) * transformation_matrix[0] + 
                     ((double) y) * transformation_matrix[1] +
                     z * transformation_matrix[2]) / new_z;
@@ -70,7 +76,10 @@ vector<double> transform_pixel(const vector<double> &transformation_matrix,
 }
 
 
-
+/*
+  Given a matrix in vector format, return the inverse of that matrix,
+  in vector format. Calculated using the determinant method
+*/
 vector<double> get_inverse_matrix(const vector<double> &original_matrix)
 {
 
@@ -139,64 +148,42 @@ vector<double> get_inverse_matrix(const vector<double> &original_matrix)
 }
 
 
-
+/*
+  Given a image, and a transformation matrix, transform that image into the
+  new coordinate system. The height and with parameters allow for creating a
+  new image background of custom size.
+*/
 CImg<double> transform_image(const CImg<double> &original_image,
                              const vector<double> &transformation_matrix,
                              int width,
                              int height)
 {
+  // This will be the storage of our transformed pixels
   vector<double> cmpr_coords(2);
 
+  // We will write our transformed image to this variable
   CImg<double> transformed_image(width,
                                  height,
                                  1,
                                  3);
+  // Make the image black to avoid garbage initialization values
   transformed_image.fill(0.0);
 
-  /*
-  for (int x = 0; x < original_image.width(); x++) {
-    for (int y = 0; y < original_image.height(); y++) {
-      cmpr_coords = 
-        transform_pixel(transformation_matrix,
-                        x,
-                        y,
-                        1);
-
-      cmpr_coords[0] = round(cmpr_coords[0]);
-      cmpr_coords[1] = round(cmpr_coords[1]);
-      if (cmpr_coords[0] < 0.0 ||
-          cmpr_coords[0] >= (float) transformed_image.width() ||
-          cmpr_coords[1] < 0.0 ||
-          cmpr_coords[1] >= (float) transformed_image.height()) {
-
-          continue;
-      } else {
-        for (int color = 0; color < 2; color++) {
-          transformed_image(cmpr_coords[0],
-                            cmpr_coords[1],
-                            0,
-                            color) = 
-            original_image(x, y, 0, color);
-        }
-      }
-    }
-  }
-  */
-  
-  
-
-  
+  // We'll do an inverse transformation, so we'll need the inverse matrix
   vector<double> inverse_matrix = 
       get_inverse_matrix(transformation_matrix);
 
+  // transform the old image to the new coordinates, pixel-by-pixel
   for (int x = 0; x < transformed_image.width(); x++) {
     for (int y = 0; y < transformed_image.height(); y++) {
+      // Get our transformed coordinate
       cmpr_coords = 
         transform_pixel(inverse_matrix,
                         x,
                         y,
                         1);
 
+      // Make sure the transformed coordinate is in the bounds of our image
       cmpr_coords[0] = round(cmpr_coords[0]);
       cmpr_coords[1] = round(cmpr_coords[1]);
       if (cmpr_coords[0] < 0.0 ||
@@ -207,6 +194,7 @@ CImg<double> transform_image(const CImg<double> &original_image,
           continue;
       } else {
         for (int color = 0; color < 3; color++) {
+          // Assign the transformed pixel to our transformation image
           transformed_image(x,
                             y,
                             0,
@@ -224,6 +212,7 @@ CImg<double> transform_image(const CImg<double> &original_image,
 }
 
 
+// Given a set of 8 points, find a homography matrix, and return a vector of values
 vector<double> get_transformation_matrix(vector<double> from_1,
                                          vector<double> to_1,
                                          vector<double> from_2,
@@ -234,6 +223,7 @@ vector<double> get_transformation_matrix(vector<double> from_1,
                                          vector<double> to_4)
 {
 
+  // Set up the matrix per Burger book
   CImg<double> P(8, 8, 1, 1);
   P.fill(0.0);
 
@@ -310,6 +300,7 @@ vector<double> get_transformation_matrix(vector<double> from_1,
 
   A.solve(P);
 
+  // Turn our CImg matrix into a vector
   for (int i = 0; i < 8; i++) {
     transformation_matrix[i] = A(i);
   }
@@ -321,9 +312,44 @@ vector<double> get_transformation_matrix(vector<double> from_1,
 
 
 
-// Transform the book according to the PDF description
-CImg<double> transform_book(CImg<double> input_image)
+void transform_lincolm()
 {
+
+  CImg<double> input_image;
+  input_image.load("./images/part1/lincoln.png");
+
+  vector<double> transform_matrix(9);
+  transform_matrix[0] = 0.907;
+  transform_matrix[1] = 0.258;
+  transform_matrix[2] = -182.0;
+
+  transform_matrix[3] = -0.153;
+  transform_matrix[4] = 1.44;
+  transform_matrix[5] = 58;
+
+  transform_matrix[6] = -0.000306;
+  transform_matrix[7] = 0.000731;
+  transform_matrix[8] = 1.0;
+
+  CImg<double> transformed_image = 
+      transform_image(input_image,
+                      transform_matrix,
+                      input_image.width(),
+                      input_image.height());
+
+  transformed_image.save("lincoln_warped.png");
+
+}
+
+
+
+// Transform the book according to the PDF description
+void transform_book()
+{
+
+  CImg<double> input_image;
+  input_image.load("./images/part1/book2.jpg");
+
   vector<double> from_1(2);
   vector<double> from_2(2);
   vector<double> from_3(2);
@@ -367,13 +393,19 @@ CImg<double> transform_book(CImg<double> input_image)
                                                from_4,
                                                to_4);
 
+  // Print the homography via the instructions:
+
+  printf("%f %f %f\n", H[0], H[1], H[2]);
+  printf("%f %f %f\n", H[3], H[4], H[5]);
+  printf("%f %f %f\n", H[6], H[7], H[8]);
+
   CImg<double> transformed_image = 
       transform_image(input_image,
                       H,
                       input_image.width(),
                       input_image.height());
 
-  return transformed_image;
+  transformed_image.save("book_result.png");
 
 }
 
@@ -382,6 +414,8 @@ CImg<double> transform_book(CImg<double> input_image)
 // Given an image, overlay that image on to the billboards
 void imageOnBillboards(CImg<double> input_image)
 {
+
+  // Load all our billboard images
   CImg<double> billboard_1;
   CImg<double> billboard_2;
   CImg<double> billboard_3;
@@ -389,6 +423,7 @@ void imageOnBillboards(CImg<double> input_image)
   billboard_2.load("./images/part1/billboard2.png");
   billboard_3.load("./images/part1/billboard3.jpg");
 
+  // Variables for our coorespondences for the homography matrix
   vector<double> from_1(2);
   vector<double> from_2(2);
   vector<double> from_3(2);
@@ -453,7 +488,7 @@ void imageOnBillboards(CImg<double> input_image)
     }
   }
 
-  billboard_1.save("overlay_1.jpg", -1, 6);
+  billboard_1.save("synthetic_billboard1.png", -1, 6);
 
   // billboard 2 to coordinates
 
@@ -495,7 +530,7 @@ void imageOnBillboards(CImg<double> input_image)
     }
   }
 
-  billboard_2.save("overlay_2.jpg", -1, 6);
+  billboard_2.save("synthetic_billboard2.png", -1, 6);
 
 
   // billboard 3 to coordinates
@@ -538,7 +573,7 @@ void imageOnBillboards(CImg<double> input_image)
     }
   }
 
-  billboard_3.save("overlay_3.jpg", -1, 6);
+  billboard_3.save("synthetic_billboard3.png", -1, 6);
 
 
 }
@@ -571,6 +606,7 @@ int find_match(const SiftDescriptor &original_descriptor,
                const vector<SiftDescriptor> &match_descriptors,
                double threshold)
 {
+  // Just use some really large numbers that will be replaced on the first iteration
   double best_distance = 100000000.0;
   double second_best_distance = 100000000.0;
   double current_distance;
@@ -578,21 +614,29 @@ int find_match(const SiftDescriptor &original_descriptor,
   int best_descriptor_element;
 
   for (int element = 0; element < match_descriptors.size(); element++) {
+    // Find the distance between our target descriptor and potential match
     current_distance =
         find_distance(original_descriptor, match_descriptors[element]);
 
+    /*
+      Assign the distance between to descriptors to the best distance if
+      it is the lowest we've seen so far. Assign the previous best distance
+      to the second best distance for ratio comparison later
+    */
     if (current_distance < best_distance) {
-
       best_descriptor_element = element;
       second_best_distance = best_distance;
       best_distance = current_distance;
 
+    /*
+      If the new comparison isn't better than our best distance,
+      see if it is better than our second best distance
+    */
     } else if (current_distance < second_best_distance) {
       second_best_distance = current_distance;
     }
   }
 
-  //printf("best: %f, second best: %f\n", best_distance, second_best_distance);
 
   if ((best_distance / second_best_distance) > threshold) {
     return -1;
@@ -615,17 +659,23 @@ vector<int> find_all_matches(const vector<SiftDescriptor> &original_descriptors,
                              const vector<SiftDescriptor> &match_descriptors,
                              double threshold)
 {
+  // The index of a matched element
   int match_index;
+  // Indices of all matched elements
   vector<int> matches;
 
+  // iterate over our descriptors
   for (int element = 0; element < original_descriptors.size(); element++) {
 
+    // See if there is a match for our descriptor
     match_index = find_match(original_descriptors[element],
                              match_descriptors,
                              threshold);
 
+    // If there is no match, continue to the next descriptor
     if (match_index == -1) {
       continue;
+    // Otherwise, store the correspondence
     } else {
       matches.push_back(element);
       matches.push_back(match_index);
@@ -637,9 +687,11 @@ vector<int> find_all_matches(const vector<SiftDescriptor> &original_descriptors,
 
 
 
+// Given two images, put then side by side for line correspondences
 CImg<double> combine_images(const CImg<double> &original_image,
                             const CImg<double> &new_image)
 {
+  // Find the larger height of the 2 images
   int larger_height;
 
   if (original_image.height() > new_image.height()) {
@@ -648,12 +700,15 @@ CImg<double> combine_images(const CImg<double> &original_image,
     larger_height = new_image.height();
   }
 
+  // create a new image equal to the combined width and the large height of the 2 images
   CImg<double> combined_image(original_image.width() + new_image.width(),
                               larger_height,
                               1,
                               3);
+  // Make sure we don't have any garbage values
   combined_image.fill(0.0);
 
+  // Put the first image on the new background, pixel-by-pixel
   for (int x = 0; x < original_image.width(); x++) {
     for (int y = 0; y < original_image.height(); y++) {
       for (int color = 0; color < 3; color++) {
@@ -662,6 +717,7 @@ CImg<double> combine_images(const CImg<double> &original_image,
     }
   }
 
+  // Put the second image on the new background, pixel-by-pixel
   for (int x = original_image.width();
        x < original_image.width() + new_image.width();
        x++) {
@@ -677,6 +733,11 @@ CImg<double> combine_images(const CImg<double> &original_image,
 
 
 
+
+/*
+  Given a combined image, a set of descriptors, and a set of matches,
+  draw lines between the corresponding descriptors
+*/
 CImg<double> draw_lines(CImg<double> combined_image,
                         const vector<SiftDescriptor> &image1_descriptors,
                         const vector<SiftDescriptor> &image2_descriptors,
@@ -684,11 +745,13 @@ CImg<double> draw_lines(CImg<double> combined_image,
                         int added_width)
 {
 
+  // The x and y values for the corresponding elements
   int x_1, x_2, y_1, y_2;
 
   for (int element = 0; element < all_matches.size(); element += 2) {
     x_1 = image1_descriptors[all_matches[element]].col;
     y_1 = image1_descriptors[all_matches[element]].row;
+    // Our 2nd image will be on the right, so we need to add the width of the first image
     x_2 = image2_descriptors[all_matches[element+1]].col + added_width;
     y_2 = image2_descriptors[all_matches[element+1]].row;
 
@@ -702,7 +765,7 @@ CImg<double> draw_lines(CImg<double> combined_image,
 
 
 
-// Get unique set of numbers
+// Get a set of unique numbers by shuffling all possible numbers in range
 vector<int> get_random_numbers(int num_numbers,
                                vector<int> random_generator)
 {
@@ -718,16 +781,18 @@ vector<int> get_random_numbers(int num_numbers,
 
 
 
+// Given a set of corresponding sift descriptors,
+// create a homography from randomly selected points
 vector<double> get_random_homography(const vector<SiftDescriptor> &image1_descriptors,
                                      const vector<SiftDescriptor> &image2_descriptors,
                                      const vector<int> &all_matches,
                                      vector<int> random_generator)
 {
-  int max_value = (all_matches.size() / 2) - 1;
+  // select random points to use for homography
   vector<int> point_indices = 
       get_random_numbers(4, random_generator);
 
-
+  // storage for homography coordinates
   vector<double> from_1(2);
   vector<double> to_1(2);
   vector<double> from_2(2);
@@ -737,14 +802,22 @@ vector<double> get_random_homography(const vector<SiftDescriptor> &image1_descri
   vector<double> from_4(2);
   vector<double> to_4(2);
 
+  // The indices of our descriptor points
   int index_1, index_2, index_3, index_4;
 
+  /*
+    all_matches contains the indices for our descriptor and it's match.
+    Therefore, it contains all_matches.size() / 2 correspondances. We select
+    from 0 to all_matches.size() / 2 as correspondances for the homography,
+    so we transform the indices back to all_matches indices here
+  */
   index_1 = point_indices[0] * 2;
   index_2 = point_indices[1] * 2;
   index_3 = point_indices[2] * 2;
   index_4 = point_indices[3] * 2;
 
 
+  // Set up our coordinates from our selected correspondances
   to_1[0] = image1_descriptors[all_matches[index_1]].col;
   to_1[1] = image1_descriptors[all_matches[index_1]].row;
 
@@ -769,37 +842,20 @@ vector<double> get_random_homography(const vector<SiftDescriptor> &image1_descri
   from_4[0] = image2_descriptors[all_matches[index_4 + 1]].col;
   from_4[1] = image2_descriptors[all_matches[index_4 + 1]].row;
 
-
+  // Create our homography
   vector<double> transformation_matrix = 
           get_transformation_matrix(from_1, to_1,
                                     from_2, to_2,
                                     from_3, to_3,
                                     from_4, to_4);
-          /*
-  printf("from_1: %f %f\n", from_1[0], from_1[1]);
-  printf("from_2: %f %f\n", from_2[0], from_2[1]);
-  printf("from_3: %f %f\n", from_3[0], from_3[1]);
-  printf("from_4: %f %f\n", from_4[0], from_4[1]);
-
-  printf("to_1: %f %f\n", to_1[0], to_1[1]);
-  printf("to_2: %f %f\n", to_2[0], to_2[1]);
-  printf("to_3: %f %f\n", to_3[0], to_3[1]);
-  printf("to_4: %f %f\n", to_4[0], to_4[1]);
-
-  for (int i = 0; i < transformation_matrix.size(); i++) {
-    printf("%f ", transformation_matrix[i]);
-  }
-  printf("\n");
-
-  //exit(0);
-  */
-
 
   return transformation_matrix;
 }
 
 
 
+// Given a set of coordinates and a distance threshold, check if a point
+// is an inlier or not
 double check_inlier(double x_1,
                     double x_2,
                     double y_1,
@@ -807,20 +863,11 @@ double check_inlier(double x_1,
                     double inlier_dist_threshold)
 {
 
-  //printf("%f %f\n", x_1, x_2);
-  //printf("%f %f\n", y_1, y_2);
-  //printf("%f %f\n", (x_1 - x_2), (y_1 - y_2));
-
-
-  //printf("%f %f\n", pow((x_1 - x_2), 2.0), pow((y_1 - y_2), 2.0));
-  //printf("%f\n", );
 
   double distance =
         sqrt(pow((x_1 - x_2), 2.0) + 
              pow((y_1 - y_2), 2.0));
 
-  //printf("distance: %f\n", distance);
-  //printf("\n");
 
   if (distance < inlier_dist_threshold) {
     return distance;
@@ -832,6 +879,7 @@ double check_inlier(double x_1,
 
 
 
+// Given a homography, evaluate the quality of the model
 double evaluate_model(const vector<SiftDescriptor> &image1_descriptors,
                       const vector<SiftDescriptor> &image2_descriptors,
                       const vector<int> &all_matches,
@@ -845,9 +893,10 @@ double evaluate_model(const vector<SiftDescriptor> &image1_descriptors,
   double pixel_distance;
   double total_distance = 0.0;
 
-  vector<double> transformed_pixels(2);
+  vector<double> transformed_pixels(2); // storage for our pixels transformed by the homography
   SiftDescriptor descriptor_1, descriptor_2;
 
+  // Iterate through all of our correspondances
   for (int match_element = 0;
        match_element < all_matches.size();
        match_element += 2) {
@@ -855,37 +904,36 @@ double evaluate_model(const vector<SiftDescriptor> &image1_descriptors,
     descriptor_1 = image1_descriptors[all_matches[match_element]];
     descriptor_2 = image2_descriptors[all_matches[match_element+1]];
 
+    // transform the correspondances into the same coordinate set
     transformed_pixels = 
         transform_pixel(transformation_matrix,
                         descriptor_2.col,
                         descriptor_2.row,
                         1.0);
 
-    //printf("%f %f\n", descriptor_1.col, descriptor_1.row);
-    //printf("%f %f\n", descriptor_2.col, descriptor_2.row);
-    //printf("%f %f\n", transformed_pixels[0], transformed_pixels[1]);
-
+    // Check their distance within the same coordinate set
     pixel_distance = check_inlier(descriptor_1.col,
                                   transformed_pixels[0],
                                   descriptor_1.row,
                                   transformed_pixels[1],
                                   inlier_dist_threshold);
 
+    // If their distance is outside a given threshold, consider the
+    // correspondance an outline. Otherwise, consider it an inlier
+    // and add the correspondance distance to the total distance
     if (pixel_distance != -1.0) {
       total_inliers += 1;
       total_distance += pixel_distance;
     }
 
   }
-  //printf("total inliers: %d\n", total_inliers);
-  //printf("ratio: %f\n", ((double) total_inliers / (double) (all_matches.size() / 2)));
 
-  //exit(0);
-
+  // If we don't have enough inliers, discard the model
   if (((double) total_inliers / (double) (all_matches.size() / 2))
        < inlier_ratio_threshold) {
     return -1.0;
   } else {
+    // Otherwise, return the total distance to evaluate model quality
     return total_distance;
   }
 
@@ -893,6 +941,8 @@ double evaluate_model(const vector<SiftDescriptor> &image1_descriptors,
 
 
 
+// Iterate through a number of trials,
+// selecting random homographies, and returning the best one
 vector<double> get_best_homography(const vector<SiftDescriptor> &image1_descriptors,
                                    const vector<SiftDescriptor> &image2_descriptors,
                                    const vector<int> &all_matches,
@@ -901,26 +951,38 @@ vector<double> get_best_homography(const vector<SiftDescriptor> &image1_descript
                                    int number_trials)
 {
 
+  // The best found homography and its score
   vector<double> best_homography;
   double best_distance = -1.0;
 
+  // The current homography we are examining
   vector<double> current_homography;
   double current_distance;
 
+  /*
+    This algorithm only counts a "good" model as a trial, will continue
+    searching if we find a "bad" model as if we didn't do a trial at all.
+    This variable sets a cut-off point if we can't find enough good models,
+    so we won't end up in an infinite loop
+  */
   int max_bad_models = 4*number_trials;
 
+  // We'll pick points from this vector later, using a shuffling algorithm
   vector<int> random_generator(all_matches.size() / 2);
   for (int i = 0; i < (all_matches.size() / 2); i++) {
     random_generator[i] = i;
   }
 
+  // Try as many homographies as given trials
   for (int trial = 0; trial < number_trials; trial++) {
+    // Get a homography
     current_homography = 
         get_random_homography(image1_descriptors,
                               image2_descriptors,
                               all_matches,
                               random_generator);
 
+    // Get the quality of the homography
     current_distance = 
         evaluate_model(image1_descriptors,
                        image2_descriptors,
@@ -929,10 +991,12 @@ vector<double> get_best_homography(const vector<SiftDescriptor> &image1_descript
                        inlier_dist_threshold,
                        inlier_ratio_threshold);
 
+    // If this model isn't good enough, discard the homography nad try again
     if (current_distance == -1.0) {
-      //printf("bad model\n");
       trial--;
       max_bad_models--;
+      // if we've seen too many bad homographies, give the user a message saying
+      // we can't find good correspondances
       if (max_bad_models < 0) {
         best_homography.push_back(-1);
         return best_homography;
@@ -940,12 +1004,12 @@ vector<double> get_best_homography(const vector<SiftDescriptor> &image1_descript
       continue;
     }
 
+    // If this is our first homography, call it our best
     if (best_distance == -1.0) {
-      //printf("first model\n");
       best_distance = current_distance;
       best_homography = current_homography;
+    // Otherwised, compare it to our previous best
     } else if (current_distance < best_distance) {
-      //printf("better model\n");
       best_distance = current_distance;
       best_homography = current_homography;
     }
@@ -958,6 +1022,7 @@ vector<double> get_best_homography(const vector<SiftDescriptor> &image1_descript
 
 
 
+// Given a good homography, get all the inlier points in this model
 vector<int> get_inliers(const vector<SiftDescriptor> &image1_descriptors,
                         const vector<SiftDescriptor> &image2_descriptors,
                         const vector<int> &all_matches,
@@ -972,48 +1037,29 @@ vector<int> get_inliers(const vector<SiftDescriptor> &image1_descriptors,
 
   double pixel_distance;
 
+  // Go through all our descriptor matches
   for (int match_element = 0;
        match_element < all_matches.size();
        match_element += 2) {
 
-    /*
-    printf("get descriptors\n");
-    printf("match element: %d\n", match_element);
-    printf("all_matches size: %d\n", all_matches.size());
-    printf("image1_descriptors size: %d\n", image1_descriptors.size());
-    printf("image2_descriptors size: %d\n", image2_descriptors.size());
-    printf("all_matches index 1: %d\n", all_matches[match_element]);
-    printf("all_matches index 2: %d\n", all_matches[match_element+1]);
-    */
-
-    //printf("image_1\n");
     descriptor_1 = image1_descriptors[all_matches[match_element]];
-    //printf("image_2\n");
     descriptor_2 = image2_descriptors[all_matches[match_element+1]];
 
-    //descriptor_1 = image1_descriptors[all_matches[match_element]];
-    //descriptor_2 = image2_descriptors[all_matches[match_element+1]];
-
-    //printf("transform_pixels\n");
-    //printf("transform_matrix_size %d\n", transformation_matrix.size());
-    //exit(0);
-
+    // Transform our descriptors to the same coordinate system
     transformed_pixels = 
         transform_pixel(transformation_matrix,
                         descriptor_2.col,
                         descriptor_2.row,
                         1.0);
 
-    //printf("get pixel distance\n");
-
+    // Check if the correspondances are an inlier in our model
     pixel_distance = check_inlier(descriptor_1.col,
                                   transformed_pixels[0],
                                   descriptor_1.row,
                                   transformed_pixels[1],
                                   inlier_dist_threshold);
 
-    //printf("check distance\n");
-
+    // The correspondance is an inlier, add it to our list
     if (pixel_distance != -1.0) {
       inliers.push_back(all_matches[match_element]);
       inliers.push_back(all_matches[match_element+1]);
@@ -1021,13 +1067,14 @@ vector<int> get_inliers(const vector<SiftDescriptor> &image1_descriptors,
 
   }
 
-  //printf("return inliers\n");
 
   return inliers;
 }
 
 
 
+// Given a transformation matrix and an image, find the height and
+// width of the transformed image
 vector<int> get_height_width(const vector<double> &transformation_matrix,
                              const CImg<double> &transform_from)
 {
@@ -1104,10 +1151,128 @@ vector<int> get_height_width(const vector<double> &transformation_matrix,
 
 
 
+
+/*
+  This code was going to be used to smooth panorama overlaps, but
+  we didn't get part 2 working, so I commented it out
+*/
+
+/*
+CImg<double> get_smoothed_overlap(const CImg<double> &base_image,
+                                  const CImg<double> &new_image,
+                                  int left_side_overlap,
+                                  int right_side_overlap,
+                                  int height)
+{
+
+  int overlap_width = (right_side_overlap - left_side_overlap) + 1;
+
+  CImg<double> smoothed_overlap_area(overlap_width, height, 1, 3);
+  smoothed_overlap_area.fill(0.0);
+
+  CImg<double> base_image_overlap(overlap_width, height, 1, 3);
+  CImg<double> new_image_overlap(overlap_width, height, 1, 3);
+  CImg<double> mask_image_overlap(overlap_width, height, 1, 1);
+  mask_image_overlap.fill(0.0);
+  base_image_overlap.fill(0.0);
+  new_image_overlap.fill(0.0);
+
+  int left_side = (int) (overlap_width / 2.0);
+  for (int x = 0; x < overlap_width; x++) {
+    for (int y = 0; y < height; y++) {
+      if (x < left_side) {
+        mask_image_overlap(x, y, 0, 0) = 0.0;
+      } else {
+        mask_image_overlap(x, y, 0, 0) = 255.0; 
+      }
+    }
+  }
+
+
+  for (int x = 0; x < overlap_width; x++) {
+    for (int y = 0; y < new_image.height(); y++) {
+
+      new_image_overlap(x, y, 0, 0) = 
+          new_image(x + left_side_overlap, y, 0, 0);
+      new_image_overlap(x, y, 0, 1) = 
+          new_image(x + left_side_overlap, y, 0, 1);
+      new_image_overlap(x, y, 0, 2) = 
+          new_image(x + left_side_overlap, y, 0, 2);
+    }
+  }
+
+
+  for (int x = 0; x < overlap_width; x++) {
+    for (int y = 0; y < base_image.height(); y++) {
+      base_image_overlap(x, y, 0, 0) = 
+          base_image(x + left_side_overlap, y, 0, 0);
+      base_image_overlap(x, y, 0, 1) = 
+          base_image(x + left_side_overlap, y, 0, 1);
+      base_image_overlap(x, y, 0, 2) = 
+          base_image(x + left_side_overlap, y, 0, 2);
+    }
+  }
+
+
+  for (int x = 0; x < overlap_width; x++) {
+    for (int y = 0; y < new_image.height(); y++) {
+
+      smoothed_overlap_area(x, y, 0, 0) = 
+          new_image(x + left_side_overlap, y, 0, 0);
+      smoothed_overlap_area(x, y, 0, 1) = 
+          new_image(x + left_side_overlap, y, 0, 1);
+      smoothed_overlap_area(x, y, 0, 2) = 
+          new_image(x + left_side_overlap, y, 0, 2);
+    }
+  }
+
+
+  for (int x = 0; x < overlap_width; x++) {
+    for (int y = 0; y < base_image.height(); y++) {
+      smoothed_overlap_area(x, y, 0, 0) = 
+          base_image(x + left_side_overlap, y, 0, 0);
+      smoothed_overlap_area(x, y, 0, 1) = 
+          base_image(x + left_side_overlap, y, 0, 1);
+      smoothed_overlap_area(x, y, 0, 2) = 
+          base_image(x + left_side_overlap, y, 0, 2);
+    }
+  }
+
+  smoothed_overlap_area.save("overlap.png");
+
+  return smoothed_overlap_area;
+}
+
+
+
+int find_left_edge(const CImg<double> &new_image) {
+
+  for (int x = 0; x < new_image.width(); x++) {
+    for (int y = 0; y < new_image.height(); y++) {
+      //printf("%f %f %f\n", new_image(x, y, 0, 0),
+      //                     new_image(x, y, 0, 1),
+      //                     new_image(x, y, 0, 2));
+      if (new_image(x, y, 0, 0) != 0.0 ||
+          new_image(x, y, 0, 1) != 0.0 ||
+          new_image(x, y, 0, 2) != 0.0) {
+        return x;
+      }
+    }
+  }
+
+}
+*/
+
+
+/*
+  Merge 2 images, transformed to the same coordinate system,
+  in order to create a panorama
+*/
 CImg<double> merge_images(const CImg<double> &base_image,
                           const CImg<double> &new_image)
 {
 
+  // Find the height and width of the merged image
   int height, width;
   if (base_image.width() > new_image.width()) {
     width = base_image.width();
@@ -1121,37 +1286,69 @@ CImg<double> merge_images(const CImg<double> &base_image,
     height = new_image.height();
   }
 
+  /*
+  int left_side_overlap, right_side_overlap;
+  right_side_overlap = base_image.width();
+  left_side_overlap = find_left_edge(new_image);
+
+  // printf("width: %d\n", new_image.width());
+  // printf("left overlap: %d\n", left_side_overlap);
+  // printf("right overlap: %d\n", right_side_overlap);
+
+
+  CImg<double> smoothed_overlap = 
+      get_smoothed_overlap(base_image,
+                           new_image,
+                           left_side_overlap,
+                           right_side_overlap,
+                           height);
+  */
+
   CImg<double> new_base_image(width, height, 1, 3);
-  
-  for (int width = 0; width < new_image.width(); width++) {
-    for (int height = 0; height < new_image.height(); height++) {
+
+  // Copy the new image first  
+  for (int x = 0; x < new_image.width(); x++) {
+    for (int y = 0; y < new_image.height(); y++) {
       for (int color = 0; color < 3; color++) {
-        new_base_image(width, height, 0, color) =
-            new_image(width, height, 0, color);
+        new_base_image(x, y, 0, color) =
+            new_image(x, y, 0, color);
       }
     }
   }
   
-
-  for (int width = 0; width < base_image.width(); width++) {
-    for (int height = 0; height < base_image.height(); height++) {
-      if ((base_image(width, height, 0, 0) != 0.0) ||
-          (base_image(width, height, 0, 1) != 0.0) ||
-          (base_image(width, height, 0, 2) != 0.0)) {
+  // and overlay our old base image onto the new image
+  for (int x = 0; x < base_image.width(); x++) {
+    for (int y = 0; y < base_image.height(); y++) {
+      if ((base_image(x, y, 0, 0) != 0.0) ||
+          (base_image(x, y, 0, 1) != 0.0) ||
+          (base_image(x, y, 0, 2) != 0.0)) {
 
         for (int color = 0; color < 3; color++) {
-          new_base_image(width, height, 0, color) =
-              base_image(width, height, 0, color);
+          new_base_image(x, y, 0, color) =
+              base_image(x, y, 0, color);
         }
       }
     }
   }
+
+  /*
+  for (int x = left_side_overlap; x < right_side_overlap + 1; x++) {
+    printf("%d %d\n", x, (x - left_side_overlap));
+    for (int y = 0; y < height; y++) {
+      for (int color = 0; color < 3; color++) {
+        new_base_image(x, y, 0, color) = 
+            smoothed_overlap(x - left_side_overlap, y, 0, color);
+      }
+    }
+  }
+  */
 
   return new_base_image;
 }
 
 
 
+// Given to matrices, represented as vectors, multiply them together
 vector<double> matrix_multiply(vector<double> best_homography,
                                vector<double> transform_matrix)
 {
@@ -1216,21 +1413,136 @@ vector<double> matrix_multiply(vector<double> best_homography,
 
 
 
+vector<CImg<double> > get_gaussian_pyramid(CImg<double> image,
+                                           CImg<double> filter,
+                                           int pyramid_size)
+{
+
+  vector<CImg<double> > gaussian_pyramid(pyramid_size);
+  gaussian_pyramid[0] = image;
+
+  if (image.width() % 2 == 1) {
+    image.resize(image.width() - 1, image.width() - 1, 1, 3);
+  }
+
+  for (int i = 1; i < pyramid_size; i++) {
+
+    CImg<double> G_prev = gaussian_pyramid[i - 1];
+    int G_prev_rows = G_prev.width();
+    int G_prev_cols = G_prev.height();
+
+    CImg<double> G_curr = G_prev.get_convolve(filter);
+    // truncating to half size. Maybe we should round??
+    G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3); 
+    gaussian_pyramid[i] = G_curr;
+  }
+
+  return gaussian_pyramid;
+}
+
+
+vector<CImg<double> > get_laplacian_pyramid(vector<CImg<double> > gaussian_pyramid,
+                                            CImg<double> filter)
+{
+
+  vector<CImg<double> > laplacian_pyramid(gaussian_pyramid.size());
+  laplacian_pyramid[0] = 
+      gaussian_pyramid[gaussian_pyramid.size() - 1];
+
+  int L_counter = 1;
+  for (int i = gaussian_pyramid.size() - 2; i >= 0; i--) {
+   CImg<double> G_curr = gaussian_pyramid[i];
+   CImg<double> G_smooth = G_curr.get_convolve(filter);
+   
+   // subtract the smoothed version from the normal to get the Laplacian
+   laplacian_pyramid[L_counter] = G_curr - G_smooth;
+   L_counter += 1;
+  }
+
+  return laplacian_pyramid;
+
+}
+
+
+
+vector<CImg<double> > get_laplacian_blend(vector<CImg<double> > laplacian_pyramid_1,
+                                          vector<CImg<double> > laplacian_pyramid_2,
+                                          vector<CImg<double> > mask_pyramid)
+{
+
+  vector<CImg<double> > LB(laplacian_pyramid_1.size()); 
+  int start_size = laplacian_pyramid_1[laplacian_pyramid_1.size() - 1].width();
+
+  int L_counter = laplacian_pyramid_1.size() - 1;
+  for (int i = 0; i < laplacian_pyramid_1.size(); i++) {
+    //printf("get vars\n");
+    CImg<double> LB_curr(start_size, start_size, 1, 3);
+    CImg<double> mask_curr = mask_pyramid[i];
+    CImg<double> img1_L_curr = laplacian_pyramid_1[L_counter];
+    CImg<double> img2_L_curr = laplacian_pyramid_2[L_counter];
+
+    //printf("iterate images\n");
+     
+    cimg_forXYC(LB_curr, x, y, c) {
+      LB_curr(x, y, c) =
+          ( (mask_curr(x, y, 1) / 255.0) * img1_L_curr(x, y, c) ) +
+          ( (1 - (mask_curr(x, y, 1) / 255.0)) * img2_L_curr(x, y, c) ); 
+    }
+
+    //printf("update index\n");
+
+    LB[i] = LB_curr;
+    L_counter -= 1;
+    start_size /= 2;
+
+    //printf("finish\n");
+  }
+
+  return LB;
+
+}
+
+
+
+CImg<double> get_blended_image(vector<CImg<double> > laplacian_blend,
+                               CImg<double> filter)
+{
+
+    vector<CImg<double> > steps(laplacian_blend.size() - 1);
+    int start_size = laplacian_blend[laplacian_blend.size() - 1].width();
+
+    CImg<double> step(start_size, start_size, 1, 3);
+    CImg<double> step_0 = laplacian_blend[laplacian_blend.size() - 1];
+    //steps[0] = step_0;
+
+    int L_counter = laplacian_blend.size() - 2;
+    //int sizes[6] = {10, 20, 39, 77, 153, 307};
+    for (int i = 0; i < 5; i++) {
+      CImg<double> prev_step = laplacian_blend[L_counter + 1];
+      start_size = laplacian_blend[L_counter].width();
+      //int S_prev_rows = prev_step.width();
+      //int S_prev_cols = prev_step.height();
+      CImg<double> curr_step = prev_step.get_resize(start_size, start_size, 1, 3);
+
+      CImg<double> curr_smooth = curr_step.get_convolve(filter * 4);
+      CImg<double> curr_LB = laplacian_blend[L_counter];
+
+      CImg<double> next_step(start_size, start_size, 1, 3); 
+
+      cimg_forXYC(next_step, x, y, c) {
+        next_step(x, y, c) = curr_LB(x, y, c) + curr_smooth(x, y, c); 
+      }
+      steps[i] = next_step;
+      L_counter -= 1;
+    }
+
+  return steps[steps.size() - 1].normalize(0,255);
+}
+
+
+
 int main(int argc, char **argv)
 { 
-  /*
-    CImg <double> input_image1;
-    input_image1.load("book1.jpg");
-
-    CImg <double> input_image2;
-    input_image2.load("book2.jpg");
-
-    CImg <double> combined_image = 
-        combine_images(input_image1, input_image2);
-
-    combined_image.save("combined_image.png");
-    exit(0);
-  */
 
   srand(unsigned(time(0)));
 
@@ -1243,13 +1555,149 @@ int main(int argc, char **argv)
         printf("Program Usage ./a2 part1 [input_image]\n");
         exit(0);
       }
+      transform_book();
 
       CImg<double> input_image;
       input_image.load(argv[2]);
+      transform_lincolm();
+      // Put the given input image on all 3 billboards
       imageOnBillboards(input_image);
     }	
     else if(part == "part2"){
+      // Blending
+      // Given 2 images and a mask
+      string image1_str = argv[2];
+      string image2_str = argv[3];
+      string mask_str = argv[4];
+      
+      // Read in the images
+      CImg<double> image1;
+      CImg<double> image2;
+      CImg<double> mask;
 
+      image1.load(image1_str.c_str());
+      image2.load(image2_str.c_str());
+      mask.load(mask_str.c_str());
+
+      // normalize mask values to be between 0 and 1 instead of 0 and 255
+
+      // 1. For each img, compute the Gaussian pyramid and the Laplacian pyramid
+      // Gaussian pyramids
+      //int rounds = 5;   // this is the number of levels in the Gaussian pyramid
+
+      // Here is the Gaussian low-pass filter:
+       CImg<double> filter(5, 5);
+
+       filter(0, 0) = 1.0;
+       filter(0, 1) = 4.0;
+       filter(0, 2) = 6.0;
+       filter(0, 3) = 4.0;
+       filter(0, 4) = 1.0;
+
+       filter(1, 0) = 4.0;
+       filter(1, 1) = 16.0;
+       filter(1, 2) = 24.0;
+       filter(1, 3) = 16.0;
+       filter(1, 4) = 4.0;
+
+       filter(2, 0) = 6.0;
+       filter(2, 1) = 24.0;
+       filter(2, 2) = 36.0;
+       filter(2, 3) = 24.0;
+       filter(2, 4) = 6.0;
+
+       filter(3, 0) = 4.0;
+       filter(3, 1) = 16.0;
+       filter(3, 2) = 24.0;
+       filter(3, 3) = 16.0;
+       filter(3, 4) = 4.0;
+
+       filter(4, 0) = 1.0;
+       filter(4, 1) = 4.0;
+       filter(4, 2) = 6.0;
+       filter(4, 3) = 4.0;
+       filter(4, 4) = 1.0;
+       
+       filter /= 256.0;
+
+      vector<CImg<double> > image1_gauss_pyramid =
+          get_gaussian_pyramid(image1,
+                               filter,
+                               6);
+
+      vector<CImg<double> > image2_gauss_pyramid =
+          get_gaussian_pyramid(image2,
+                               filter,
+                               6);
+
+      vector<CImg<double> > mask_gauss_pyramid =
+          get_gaussian_pyramid(mask,
+                               filter,
+                               6);
+
+      image1_gauss_pyramid[0].save("image_1_gauss_0.png");
+      image1_gauss_pyramid[1].save("image_1_gauss_1.png");
+      image1_gauss_pyramid[2].save("image_1_gauss_2.png");
+      image1_gauss_pyramid[3].save("image_1_gauss_3.png");
+      image1_gauss_pyramid[4].save("image_1_gauss_4.png");
+      image1_gauss_pyramid[5].save("image_1_gauss_5.png");
+
+      image2_gauss_pyramid[0].save("image_2_gauss_0.png");
+      image2_gauss_pyramid[1].save("image_2_gauss_1.png");
+      image2_gauss_pyramid[2].save("image_2_gauss_2.png");
+      image2_gauss_pyramid[3].save("image_2_gauss_3.png");
+      image2_gauss_pyramid[4].save("image_2_gauss_4.png");
+      image2_gauss_pyramid[5].save("image_2_gauss_5.png");
+
+      mask_gauss_pyramid[0].save("mask_gauss_0.png");
+      mask_gauss_pyramid[1].save("mask_gauss_1.png");
+      mask_gauss_pyramid[2].save("mask_gauss_2.png");
+      mask_gauss_pyramid[3].save("mask_gauss_3.png");
+      mask_gauss_pyramid[4].save("mask_gauss_4.png");
+      mask_gauss_pyramid[5].save("mask_gauss_5.png");
+
+
+      vector<CImg<double> > image1_lap_pyramid =
+          get_laplacian_pyramid(image1_gauss_pyramid,
+                                filter);
+
+      vector<CImg<double> > image2_lap_pyramid =
+           get_laplacian_pyramid(image2_gauss_pyramid,
+                                filter);
+
+      image1_lap_pyramid[0].save("image_1_lap_0.png");
+      image1_lap_pyramid[1].save("image_1_lap_1.png");
+      image1_lap_pyramid[2].save("image_1_lap_2.png");
+      image1_lap_pyramid[3].save("image_1_lap_3.png");
+      image1_lap_pyramid[4].save("image_1_lap_4.png");
+      image1_lap_pyramid[5].save("image_1_lap_5.png");
+
+      image2_lap_pyramid[0].save("image_2_lap_0.png");
+      image2_lap_pyramid[1].save("image_2_lap_1.png");
+      image2_lap_pyramid[2].save("image_2_lap_2.png");
+      image2_lap_pyramid[3].save("image_2_lap_3.png");
+      image2_lap_pyramid[4].save("image_2_lap_4.png");
+      image2_lap_pyramid[5].save("image_2_lap_5.png");
+
+
+      vector<CImg<double> > lap_blend_pyramid =
+          get_laplacian_blend(image1_lap_pyramid,
+                              image2_lap_pyramid,
+                              mask_gauss_pyramid);
+
+
+      lap_blend_pyramid[0].save("blend_0.png");
+      lap_blend_pyramid[1].save("blend_1.png");
+      lap_blend_pyramid[2].save("blend_2.png");
+      lap_blend_pyramid[3].save("blend_4.png");
+      lap_blend_pyramid[4].save("blend_5.png");
+      lap_blend_pyramid[5].save("blend_6.png");
+
+      CImg<double> final_blended = 
+          get_blended_image(lap_blend_pyramid,
+                            filter);
+
+      final_blended.save("final_blended.png");
 
     }
     else if(part == "part3"){
@@ -1370,8 +1818,6 @@ int main(int argc, char **argv)
 
       for (int image_num = 3; image_num < argc; image_num++) {
 
-        printf("image_num %d\n", image_num);
-
         transform_to.load(argv[image_num - 1]);
         transform_from.load(argv[image_num]);
 
@@ -1385,6 +1831,11 @@ int main(int argc, char **argv)
                              transform_from_descriptors,
                              ransac_threshold);
 
+        if (all_matches.size() < 8) {
+          printf("Not enough matches found\n");
+          exit(0);
+        }
+
         best_homography = 
           get_best_homography(transform_to_descriptors,
                               transform_from_descriptors,
@@ -1393,22 +1844,15 @@ int main(int argc, char **argv)
                               inlier_ratio_threshold,
                               number_trials);
 
+        if (best_homography.size() == 1) {
+          printf("No good models found\n");
+          exit(0);
+        }
+
         current_transform = 
             matrix_multiply(best_homography,
                             current_transform);
 
-        /*
-        for (int i = 0; i < 9; i++) {
-          printf("%f ", best_homography[i]);
-        }
-        printf("\n");
-
-        for (int i = 0; i < 9; i++) {
-          printf("%f ", current_transform[i]);
-        }
-        */
-
-        printf("\n\n");
 
         height_width =
             get_height_width(current_transform,
@@ -1420,16 +1864,11 @@ int main(int argc, char **argv)
                             height_width[0],
                             height_width[1]);
 
-        //base_image.save("base_image.png");
-        //transformed_image.save("transformed_image.png");
         base_image = merge_images(base_image, transformed_image);
-        //base_image.save("after_transform.png");
 
-        //base_image.save("merged_image.png");
-        //exit(0);
       }
 
-      base_image.save("panaroma.png");
+      base_image.save("panorama.png");
 
 
     }
