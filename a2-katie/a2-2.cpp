@@ -131,21 +131,22 @@ vector<CImg<double> > get_laplacian_blend(vector<CImg<double> > laplacian_pyrami
 
 
 
-CImg<double> get_blended_image(vector<CImg<double> > laplacian_blend)
+CImg<double> get_blended_image(vector<CImg<double> > laplacian_blend,
+                               CImg<double> filter)
 {
 
     vector<CImg<double> > steps(laplacian_blend.size() - 1);
-    start_size = laplacian_blend[laplacian_blend.size() - 1].width();
+    int start_size = laplacian_blend[laplacian_blend.size() - 1].width();
 
     CImg<double> step(start_size, start_size, 1, 3);
-    CImg<double> step_0 = laplacian_blend[5];
+    CImg<double> step_0 = laplacian_blend[laplacian_blend.size() - 1];
     steps[0] = step_0;
 
-    L_counter = 4;
+    int L_counter = laplacian_blend.size() - 2;
     //int sizes[6] = {10, 20, 39, 77, 153, 307};
     for (int i = 1; i < 5; i++) {
       CImg<double> prev_step = steps[i-1];
-      start_size *= 2;
+      start_size = laplacian_blend[L_counter].width();
       //int S_prev_rows = prev_step.width();
       //int S_prev_cols = prev_step.height();
       CImg<double> curr_step = prev_step.get_resize(start_size, start_size, 1, 3);
@@ -311,7 +312,10 @@ int main(int argc, char **argv)
       lap_blend_pyramid[5].save("blend_6.png");
 
       CImg<double> final_blended = 
-          get_blended_image(lap_blend_pyramid);
+          get_blended_image(lap_blend_pyramid,
+                            filter);
+
+      final_blended.save("final_blended.png");
 
       exit(0);
 
