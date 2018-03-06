@@ -1150,7 +1150,7 @@ vector<int> get_height_width(const vector<double> &transformation_matrix,
 }
 
 
-
+// Blend code based on computer vision lab code cited in report
 CImg<double> downscale(CImg<double> original_image,
                        CImg<double> filter)
 {
