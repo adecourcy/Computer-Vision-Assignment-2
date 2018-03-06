@@ -1151,13 +1151,216 @@ vector<int> get_height_width(const vector<double> &transformation_matrix,
 
 
 
+CImg<double> downscale(CImg<double> original_image,
+                       CImg<double> filter)
+{
+  CImg<double> image = original_image.get_convolve(filter);
+
+
+  int new_width, new_height;
+
+  if (image.width() % 2 == 1) {
+    new_width = (image.width() - 1) / 2;
+  } else {
+    new_width = image.width() / 2;
+  }
+
+  if (image.height() % 2 == 1) {
+    new_height = (image.height() - 1) / 2;
+  } else {
+    new_height = image.height() / 2;
+  }
+
+  image.resize(new_width, new_height);
+
+  return image;
+
+}
+
+
+CImg<double> upscale(CImg<double> image,
+                     int width,
+                     int height,
+                     CImg<double> filter)
+{
+  CImg<double> upscaled_image = 
+      image.get_resize(width, height);
+
+  upscaled_image = upscaled_image.get_convolve(filter);
+
+  return upscaled_image;
+
+}
+
+
+
+vector<CImg<double> > get_gaussian_pyramid(CImg<double> image,
+                                           CImg<double> filter,
+                                           int pyramid_size)
+{
+
+  vector<CImg<double> > gaussian_pyramid(pyramid_size);
+  gaussian_pyramid[0] = image;
+
+  for (int i = 1; i < pyramid_size; i++) {
+
+    CImg<double> G_prev = gaussian_pyramid[i - 1];
+    CImg<double> G_curr = downscale(G_prev, filter);
+
+    gaussian_pyramid[i] = G_curr;
+  }
+
+  return gaussian_pyramid;
+}
+
+
+
+CImg<double> match_shape(CImg<double> original_image,
+                         CImg<double> upscaled_image)
+{
+  CImg<double> matched_upscale(original_image.width(),
+                               original_image.height(),
+                               1,
+                               original_image.spectrum());
+
+
+  for (int x = 0; x < original_image.width(); x++) {
+    for (int y = 0; y < original_image.height(); y++) {
+      for (int color = 0; color < original_image.spectrum(); color++) {
+        matched_upscale(x, y, 0, color) =
+                upscaled_image(x, y, 0, color);
+        //printf("%f %f\n", matched_upscale(x, y, 0, color), upscaled_image(x, y, 0, color));
+      }
+    }
+  }
+
+  return matched_upscale;
+}
+
+
+vector<CImg<double> > get_laplacian_pyramid(vector<CImg<double> > gaussian_pyramid,
+                                            CImg<double> filter)
+{
+
+  vector<CImg<double> > laplacian_pyramid(gaussian_pyramid.size());
+  laplacian_pyramid[0] = 
+      gaussian_pyramid[gaussian_pyramid.size() - 1];
+
+  int L_counter = 1;
+  for (int i = gaussian_pyramid.size() - 2; i >= 0; i--) {
+    CImg<double> G_curr = gaussian_pyramid[i];
+    CImg<double> G_smooth = upscale(gaussian_pyramid[i+1],
+                                    G_curr.width(),
+                                    G_curr.height(),
+                                    filter);
+
+    CImg<double> lap_pyr(G_curr.width(), G_curr.height(), 1, G_curr.spectrum());
+    lap_pyr.fill(0.0);
+
+    for (int x = 0; x < G_curr.width(); x++) {
+      for (int y = 0; y < G_curr.height(); y++) {
+        for (int c = 0; c < G_curr.spectrum(); c++) {
+          lap_pyr(x, y, 0, c) = G_curr(x, y, 0, c) - G_smooth(x, y, 0, c);
+        }
+      }
+    }
+  
+    laplacian_pyramid[L_counter] = lap_pyr;
+    L_counter += 1;
+  }
+
+  return laplacian_pyramid;
+
+}
+
+
+
+vector<CImg<double> > get_laplacian_blend(vector<CImg<double> > laplacian_pyramid_1,
+                                          vector<CImg<double> > laplacian_pyramid_2,
+                                          vector<CImg<double> > mask_pyramid)
+{
+
+  vector<CImg<double> > LB(laplacian_pyramid_1.size()); 
+
+  int L_counter = laplacian_pyramid_1.size() - 1;
+  for (int i = 0; i < laplacian_pyramid_1.size(); i++) {
+    CImg<double> LB_curr(laplacian_pyramid_1[L_counter].width(),
+                         laplacian_pyramid_1[L_counter].height(),
+                         1,
+                         3);
+
+    CImg<double> mask_curr = mask_pyramid[i];
+    CImg<double> img1_L_curr = laplacian_pyramid_1[L_counter];
+    CImg<double> img2_L_curr = laplacian_pyramid_2[L_counter];
+
+    //printf("iterate images\n");
+     
+  for (int x = 0; x < img1_L_curr.width(); x++) {
+    for (int y = 0; y < img1_L_curr.height(); y++) {
+      for (int c = 0; c < img1_L_curr.spectrum(); c++) {
+        LB_curr(x, y, 0, c) =
+            ( (mask_curr(x, y, 0, 0) / 255.0) * img2_L_curr(x, y, 0, c) ) +
+            ( (1 - (mask_curr(x, y, 0, 0) / 255.0)) * img1_L_curr(x, y, 0, c) ); 
+      }
+    }
+  }
+
+    //printf("update index\n");
+
+    LB[i] = LB_curr;
+    L_counter -= 1;
+
+    //printf("finish\n");
+  }
+
+  return LB;
+
+}
+
+
+
+CImg<double> get_blended_image(vector<CImg<double> > laplacian_blend,
+                               CImg<double> filter)
+{
+
+    vector<CImg<double> > steps(laplacian_blend.size());
+    steps[0] = laplacian_blend[laplacian_blend.size() - 1];
+
+    int L_counter = laplacian_blend.size() - 2;
+    //int sizes[6] = {10, 20, 39, 77, 153, 307};
+    for (int i = 1; i < laplacian_blend.size(); i++) {
+      CImg<double> prev_step = steps[i-1];
+      CImg<double> curr_LB = laplacian_blend[L_counter];
+      CImg<double> curr_smooth =
+          upscale(prev_step,
+                  curr_LB.width(),
+                  curr_LB.height(),
+                  filter);
+
+      CImg<double> next_step(curr_LB.width(), curr_LB.height(), 1, 3);
+
+      for (int x = 0; x < next_step.width(); x++) {
+        for (int y = 0; y < next_step.height(); y++) {
+          for (int c = 0; c < next_step.spectrum(); c++) {
+            next_step(x, y, 0, c) = 
+                curr_LB(x, y, 0, c) + curr_smooth(x, y, 0, c);
+          }
+        }
+      }
+
+      steps[i] = next_step;
+      L_counter -= 1;
+    }
+
+  return steps[steps.size() - 1];
+}
+
+
 
 /*
   This code was going to be used to smooth panorama overlaps, but
   we didn't get part 2 working, so I commented it out
 */
-
-/*
 CImg<double> get_smoothed_overlap(const CImg<double> &base_image,
                                   const CImg<double> &new_image,
                                   int left_side_overlap,
@@ -1198,6 +1401,7 @@ CImg<double> get_smoothed_overlap(const CImg<double> &base_image,
           new_image(x + left_side_overlap, y, 0, 1);
       new_image_overlap(x, y, 0, 2) = 
           new_image(x + left_side_overlap, y, 0, 2);
+
     }
   }
 
@@ -1210,10 +1414,108 @@ CImg<double> get_smoothed_overlap(const CImg<double> &base_image,
           base_image(x + left_side_overlap, y, 0, 1);
       base_image_overlap(x, y, 0, 2) = 
           base_image(x + left_side_overlap, y, 0, 2);
+
     }
   }
 
+  //printf("%d %d\n", base_image_overlap.width(), base_image_overlap.height());
+  //printf("%d %d\n", new_image_overlap.width(), base_image_overlap.height());
+  //printf("%d %d\n", mask_image_overlap.width(), base_image_overlap.height());
 
+  CImg<double> filter(5, 5);
+
+  filter(0, 0) = 1.0;
+  filter(0, 1) = 4.0;
+  filter(0, 2) = 6.0;
+  filter(0, 3) = 4.0;
+  filter(0, 4) = 1.0;
+
+  filter(1, 0) = 4.0;
+  filter(1, 1) = 16.0;
+  filter(1, 2) = 24.0;
+  filter(1, 3) = 16.0;
+  filter(1, 4) = 4.0;
+
+  filter(2, 0) = 6.0;
+  filter(2, 1) = 24.0;
+  filter(2, 2) = 36.0;
+  filter(2, 3) = 24.0;
+  filter(2, 4) = 6.0;
+
+  filter(3, 0) = 4.0;
+  filter(3, 1) = 16.0;
+  filter(3, 2) = 24.0;
+  filter(3, 3) = 16.0;
+  filter(3, 4) = 4.0;
+
+  filter(4, 0) = 1.0;
+  filter(4, 1) = 4.0;
+  filter(4, 2) = 6.0;
+  filter(4, 3) = 4.0;
+  filter(4, 4) = 1.0;
+
+  filter /= 256.0;
+
+  vector<CImg<double> > new_image_gauss_pyr = 
+      get_gaussian_pyramid(new_image_overlap, filter, 6);
+
+  new_image_gauss_pyr[0].save("1gn.png");
+  new_image_gauss_pyr[1].save("2gn.png");
+  new_image_gauss_pyr[2].save("3gn.png");
+  new_image_gauss_pyr[3].save("4gn.png");
+  new_image_gauss_pyr[4].save("5gn.png");
+  new_image_gauss_pyr[5].save("6gn.png");
+
+  vector<CImg<double> > base_image_gauss_pyr = 
+      get_gaussian_pyramid(base_image_overlap, filter, 6);
+
+  base_image_gauss_pyr[0].save("1gb.png");
+  base_image_gauss_pyr[1].save("2gb.png");
+  base_image_gauss_pyr[2].save("3gb.png");
+  base_image_gauss_pyr[3].save("4gb.png");
+  base_image_gauss_pyr[4].save("5gb.png");
+  base_image_gauss_pyr[5].save("6gb.png");
+
+  vector<CImg<double> > mask_gauss_pyr = 
+      get_gaussian_pyramid(mask_image_overlap, filter, 6);
+
+
+  vector<CImg<double> > new_image_lap_pyr = 
+      get_laplacian_pyramid(new_image_gauss_pyr, filter);
+
+  new_image_lap_pyr[0].save("1ln.png");
+  new_image_lap_pyr[1].save("2ln.png");
+  new_image_lap_pyr[2].save("3ln.png");
+  new_image_lap_pyr[3].save("4ln.png");
+  new_image_lap_pyr[4].save("5ln.png");
+  new_image_lap_pyr[5].save("6ln.png");
+
+  vector<CImg<double> > base_image_lap_pyr = 
+      get_laplacian_pyramid(base_image_gauss_pyr, filter);
+
+
+  vector<CImg<double> > lap_blend = 
+        get_laplacian_blend(base_image_lap_pyr,
+                            new_image_lap_pyr,
+                            mask_gauss_pyr);
+
+
+  smoothed_overlap_area = get_blended_image(lap_blend, filter);
+
+  for (int x = 0; x < smoothed_overlap_area.width(); x++) {
+    for (int y = 0; y < smoothed_overlap_area.height(); y++) {
+      for (int c = 0; c < 3; c++) {
+        if (smoothed_overlap_area(x, y, 0, c) < 0.0) {
+          smoothed_overlap_area(x, y, 0, c) = 0.0;
+        }
+      }
+    }
+  }
+
+  smoothed_overlap_area.normalize(0, 255);
+
+
+  /*
   for (int x = 0; x < overlap_width; x++) {
     for (int y = 0; y < new_image.height(); y++) {
 
@@ -1237,8 +1539,8 @@ CImg<double> get_smoothed_overlap(const CImg<double> &base_image,
           base_image(x + left_side_overlap, y, 0, 2);
     }
   }
+  */
 
-  smoothed_overlap_area.save("overlap.png");
 
   return smoothed_overlap_area;
 }
@@ -1261,7 +1563,6 @@ int find_left_edge(const CImg<double> &new_image) {
   }
 
 }
-*/
 
 
 /*
@@ -1286,7 +1587,7 @@ CImg<double> merge_images(const CImg<double> &base_image,
     height = new_image.height();
   }
 
-  /*
+  
   int left_side_overlap, right_side_overlap;
   right_side_overlap = base_image.width();
   left_side_overlap = find_left_edge(new_image);
@@ -1295,7 +1596,7 @@ CImg<double> merge_images(const CImg<double> &base_image,
   // printf("left overlap: %d\n", left_side_overlap);
   // printf("right overlap: %d\n", right_side_overlap);
 
-
+  /*
   CImg<double> smoothed_overlap = 
       get_smoothed_overlap(base_image,
                            new_image,
@@ -1303,6 +1604,7 @@ CImg<double> merge_images(const CImg<double> &base_image,
                            right_side_overlap,
                            height);
   */
+  
 
   CImg<double> new_base_image(width, height, 1, 3);
 
@@ -1331,9 +1633,9 @@ CImg<double> merge_images(const CImg<double> &base_image,
     }
   }
 
-  /*
+  /*  
   for (int x = left_side_overlap; x < right_side_overlap + 1; x++) {
-    printf("%d %d\n", x, (x - left_side_overlap));
+    //printf("%d %d\n", x, (x - left_side_overlap));
     for (int y = 0; y < height; y++) {
       for (int color = 0; color < 3; color++) {
         new_base_image(x, y, 0, color) = 
@@ -1342,6 +1644,7 @@ CImg<double> merge_images(const CImg<double> &base_image,
     }
   }
   */
+  
 
   return new_base_image;
 }
@@ -1409,134 +1712,6 @@ vector<double> matrix_multiply(vector<double> best_homography,
 
   return new_matrix;
 
-}
-
-
-
-vector<CImg<double> > get_gaussian_pyramid(CImg<double> image,
-                                           CImg<double> filter,
-                                           int pyramid_size)
-{
-
-  vector<CImg<double> > gaussian_pyramid(pyramid_size);
-  gaussian_pyramid[0] = image;
-
-  if (image.width() % 2 == 1) {
-    image.resize(image.width() - 1, image.width() - 1, 1, 3);
-  }
-
-  for (int i = 1; i < pyramid_size; i++) {
-
-    CImg<double> G_prev = gaussian_pyramid[i - 1];
-    int G_prev_rows = G_prev.width();
-    int G_prev_cols = G_prev.height();
-
-    CImg<double> G_curr = G_prev.get_convolve(filter);
-    // truncating to half size. Maybe we should round??
-    G_curr.resize(G_prev_rows/2, G_prev_cols/2, 1, 3); 
-    gaussian_pyramid[i] = G_curr;
-  }
-
-  return gaussian_pyramid;
-}
-
-
-vector<CImg<double> > get_laplacian_pyramid(vector<CImg<double> > gaussian_pyramid,
-                                            CImg<double> filter)
-{
-
-  vector<CImg<double> > laplacian_pyramid(gaussian_pyramid.size());
-  laplacian_pyramid[0] = 
-      gaussian_pyramid[gaussian_pyramid.size() - 1];
-
-  int L_counter = 1;
-  for (int i = gaussian_pyramid.size() - 2; i >= 0; i--) {
-   CImg<double> G_curr = gaussian_pyramid[i];
-   CImg<double> G_smooth = G_curr.get_convolve(filter);
-   
-   // subtract the smoothed version from the normal to get the Laplacian
-   laplacian_pyramid[L_counter] = G_curr - G_smooth;
-   L_counter += 1;
-  }
-
-  return laplacian_pyramid;
-
-}
-
-
-
-vector<CImg<double> > get_laplacian_blend(vector<CImg<double> > laplacian_pyramid_1,
-                                          vector<CImg<double> > laplacian_pyramid_2,
-                                          vector<CImg<double> > mask_pyramid)
-{
-
-  vector<CImg<double> > LB(laplacian_pyramid_1.size()); 
-  int start_size = laplacian_pyramid_1[laplacian_pyramid_1.size() - 1].width();
-
-  int L_counter = laplacian_pyramid_1.size() - 1;
-  for (int i = 0; i < laplacian_pyramid_1.size(); i++) {
-    //printf("get vars\n");
-    CImg<double> LB_curr(start_size, start_size, 1, 3);
-    CImg<double> mask_curr = mask_pyramid[i];
-    CImg<double> img1_L_curr = laplacian_pyramid_1[L_counter];
-    CImg<double> img2_L_curr = laplacian_pyramid_2[L_counter];
-
-    //printf("iterate images\n");
-     
-    cimg_forXYC(LB_curr, x, y, c) {
-      LB_curr(x, y, c) =
-          ( (mask_curr(x, y, 1) / 255.0) * img1_L_curr(x, y, c) ) +
-          ( (1 - (mask_curr(x, y, 1) / 255.0)) * img2_L_curr(x, y, c) ); 
-    }
-
-    //printf("update index\n");
-
-    LB[i] = LB_curr;
-    L_counter -= 1;
-    start_size /= 2;
-
-    //printf("finish\n");
-  }
-
-  return LB;
-
-}
-
-
-
-CImg<double> get_blended_image(vector<CImg<double> > laplacian_blend,
-                               CImg<double> filter)
-{
-
-    vector<CImg<double> > steps(laplacian_blend.size() - 1);
-    int start_size = laplacian_blend[laplacian_blend.size() - 1].width();
-
-    CImg<double> step(start_size, start_size, 1, 3);
-    CImg<double> step_0 = laplacian_blend[laplacian_blend.size() - 1];
-    //steps[0] = step_0;
-
-    int L_counter = laplacian_blend.size() - 2;
-    //int sizes[6] = {10, 20, 39, 77, 153, 307};
-    for (int i = 0; i < 5; i++) {
-      CImg<double> prev_step = laplacian_blend[L_counter + 1];
-      start_size = laplacian_blend[L_counter].width();
-      //int S_prev_rows = prev_step.width();
-      //int S_prev_cols = prev_step.height();
-      CImg<double> curr_step = prev_step.get_resize(start_size, start_size, 1, 3);
-
-      CImg<double> curr_smooth = curr_step.get_convolve(filter * 4);
-      CImg<double> curr_LB = laplacian_blend[L_counter];
-
-      CImg<double> next_step(start_size, start_size, 1, 3); 
-
-      cimg_forXYC(next_step, x, y, c) {
-        next_step(x, y, c) = curr_LB(x, y, c) + curr_smooth(x, y, c); 
-      }
-      steps[i] = next_step;
-      L_counter -= 1;
-    }
-
-  return steps[steps.size() - 1].normalize(0,255);
 }
 
 
@@ -1624,6 +1799,7 @@ int main(int argc, char **argv)
           get_gaussian_pyramid(image1,
                                filter,
                                6);
+
 
       vector<CImg<double> > image2_gauss_pyramid =
           get_gaussian_pyramid(image2,
@@ -1790,7 +1966,7 @@ int main(int argc, char **argv)
     }
     else if(part == "part4"){
       if (argc < 5) {
-        printf("Program Usage ./a2 part5 [images]\n");
+        printf("Program Usage ./a2 part4 [images]\n");
         printf("At least 3 images must be provided\n");
         exit(0);
       }
