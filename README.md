@@ -26,7 +26,7 @@ The steps we followed are as follows:
 2. We then created the blended Laplacian pyramid, using the equation from the PDF to weight the images based on the mask values.
 3. After that, we simply (not simple!!) combined the layers of the Laplacian pyramid to get our final blended image.
 
-We had a lot of trouble completing Part 2 correctly because the instructions in the PDF weren't exceptionally specific and allowed for a lot of room for interpretation. We found that even very small changes to the algorithm implementation resulted in large problems with the end result, and it would have helped to have more detailed instructions for this, or to simply be left on our own to find a working solution with more specific details. Most other groups we talked with about this problem suffered similar issues with implementing the part of the assignment, and ended up constructing a series of haphazard hacks that eventually (somehow) gave them an acceptable result. We, too, attempted our own series of hacks, in an unsuccessful attempt to fix our problem. Ultimately, we ended up basing our code off of the computer vision lab python implementation ***insert link here*** which gave us enough specific direction to make a base working model of the blending. After that, we were able to make a few minor modifications that seemed to work better in part 4 of the assignment.
+We had a lot of trouble completing Part 2 correctly because the instructions in the PDF weren't exceptionally specific and allowed for a lot of room for interpretation. We found that even very small changes to the algorithm implementation resulted in large problems with the end result, and it would have helped to have more detailed instructions for this, or to simply be left on our own to find a working solution with more specific details. Most other groups we talked with about this problem suffered similar issues with implementing the part of the assignment, and ended up constructing a series of haphazard hacks that eventually (somehow) gave them an acceptable result. We, too, attempted our own series of hacks, in an unsuccessful attempt to fix our problem. Ultimately, we ended up basing our code off of the computer vision lab python implementation (https://compvisionlab.wordpress.com/2013/05/13/image-blending-using-pyramid/) which gave us enough specific direction to make a base working model of the blending. After that, we were able to make a few minor modifications that seemed to work better in part 4 of the assignment.
 
 It would have been helpful to have example images for what our Gaussians, Laplacians, and Blended levels should've looked like, because we spent a long time trying to figure out if our Gaussians and Laplacians looked like they should've. We spent at least 30 hours (and that is a modest estimate - it was probably more) working on Part 2 alone, mostly due to the unclear instructions. After referencing the computer vision lab code, it took us less than 3 hours to get a working implementation. To be specific, a few of the issues we encountered when implementing this algorithm off of the PDF instructions (the last of which is really what the reference python code helped us with) are as follows:
 
@@ -94,6 +94,10 @@ Here's a pretty one:
 This result was closer, but blurrier:  
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/blend_try1.png)
 
+And here is the final result:
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/blended%20-%20good.png)
+
+
 ## Part 3
 Part 3 was implemented in the typical way. The only point of note in our RANSAC implementation is that with regards to the number of model trials, we did not consider a bad model to be a "trial". That is to say that if 10 sets of points are chosen, and 2 sets resulted in poor models, rejected by the algorithm, then the algorithm is only considered to have gone through 8 trials.
 
@@ -128,6 +132,13 @@ We attempted smooting on the panorama, and made a number of changes to the smoot
 1) Even when we had really good smoothing results, there was some very odd and unpleasant image distoration. An example of this can be seen between the first and second images on the TV panorama, as well as on the yoga book between the second and third images on the book panorama. Rather than having an obivous, sharp border where 1 image ends and the other begins, we have a strange transition where objects fade in and out, or bend strangely where the images meet. Given this, smoothing didn't real seem to much improve the effect of having a single panoramic image.
 2) We had some inconsistent results we attempting to perform smoothing between the images. Many times it would work well but on occasion, we would end up with a very color-distorted blend. The behavior was rather inconsistent and I believed it was ultimately due to the fact that images will have more or less black space on their overlapping sections depending on how RANSAC aligns them. If they have too much, the end result has some strange color effects. We tried to compensate for this by removing negative color values on the final blend and then normalizing. For the most part, that fixed the issue with the color effects, but we would still get distortion on occasional test runs. This also led to issue 3.
 3) After blending, the colors on the overlapping sections rarely matched well with the images on either side of them. They were quite a bit darker and made it seem like they were added in after the fact (which they were). As mentioned in part 2, we believe this was due to the fact that there are often a lot of black pixels in the overlap area.
+
+Here are our results:  
+Books:  
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panorama%20books%20-%20stitch.png)
+
+TV:  
+![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panorama%20TV%20-%20stitch.png)
 
 #### Book panorama without smoothing:
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panaroma%20books%20-%20no%20stitch.png)
