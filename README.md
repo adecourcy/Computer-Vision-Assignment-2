@@ -94,7 +94,7 @@ Here's a pretty one:
 This result was closer, but blurrier:  
 ![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/blend_try1.png)
 
-And here is the final result:
+And here is the final result:  
 ![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/blended%20-%20good.png)
 
 
