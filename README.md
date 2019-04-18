@@ -12,11 +12,11 @@ Billboard transformation points were calculated manually. The billboard transfor
 Homographies were calculated via the matrix in the Burger book.
 
 #### Billboard overlays:
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/overlay_1.jpg)
+![alt_text](overlay_1.jpg)
 
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/overlay_2.jpg)
+![alt_text](overlay_2.jpg)
 
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/overlay_3.jpg)
+![alt_text](overlay_3.jpg)
 
 ## Part 2
 We had a lot of issues with Part 2 as well, due to misunderstanding some things about CImg and problems with the assignment instructions. However, once this was worked out we generated the Gaussian and Laplacian pyramids for each image, the Gaussian for the mask, the blended Laplacian pyramid, and finally the finished, blended image. 
@@ -36,66 +36,66 @@ It would have been helpful to have example images for what our Gaussians, Laplac
 
 ### Example: Apple and Orange, using the given mask
 #### Apple Gaussians:
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/images/part2/apple.jpg)
+![alt text](images/part2/apple.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_G1.jpg)
+![alt text](result-images/image1_G1.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_G2.jpg)
+![alt text](result-images/image1_G2.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_G3.jpg)
+![alt text](result-images/image1_G3.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_G4.jpg)
+![alt text](result-images/image1_G4.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_G5.jpg)
+![alt text](result-images/image1_G5.jpg)
 
 #### Apple Laplacians:
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_L0.jpg)
+![alt text](result-images/image1_L0.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_L1.jpg)
+![alt text](result-images/image1_L1.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_L2.jpg)
+![alt text](result-images/image1_L2.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_L3.jpg)
+![alt text](result-images/image1_L3.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_L4.jpg)
+![alt text](result-images/image1_L4.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image1_L5.jpg)
+![alt text](result-images/image1_L5.jpg)
 
 #### Orange Gaussians:
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/images/part2/orange.jpg)
+![alt text](images/part2/orange.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_G1.jpg)
+![alt text](result-images/image2_G1.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_G2.jpg)
+![alt text](result-images/image2_G2.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_G3.jpg)
+![alt text](result-images/image2_G3.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_G4.jpg)
+![alt text](result-images/image2_G4.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_G5.jpg)
+![alt text](result-images/image2_G5.jpg)
 
 #### Orange Laplacians:
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L0.jpg)
+![alt text](result-images/image2_L0.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L1.jpg)
+![alt text](result-images/image2_L1.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L2.jpg)
+![alt text](result-images/image2_L2.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L3.jpg)
+![alt text](result-images/image2_L3.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L4.jpg)
+![alt text](result-images/image2_L4.jpg)
 
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/image2_L5.jpg)
+![alt text](result-images/image2_L5.jpg)
  
 We had a tough time producing the blended result. Here are some of the bad results we got:  
 Here's a pretty one:  
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/result-images/final_blended_mistake1.jpg)
+![alt text](result-images/final_blended_mistake1.jpg)
 
 This result was closer, but blurrier:  
-![alt text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/blend_try1.png)
+![alt text](blend_try1.png)
 
 And here is the final result:  
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/blended%20-%20good.png)
+![alt_text](blended%20-%20good.png)
 
 
 ## Part 3
@@ -112,10 +112,10 @@ Using RANSAC did seem to give noticably better correspondances, but they didn't 
 Our program attempts to output an error message when it is given 2 images with poor correspondances and it can't find any matches. However, there were a lot of edge cases to consider and there may be a few cases in which the program may crash if it is given 2 poorly matching images.
 
 #### Big Ben with Sift:
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/sift%20-%20Big%20Ben.png)
+![alt_text](sift%20-%20Big%20Ben.png)
 
 #### Big Ben with RANSAC:
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/ransac%20-%20Big%20Ben.png)
+![alt_text](ransac%20-%20Big%20Ben.png)
 
 ## Part 4
 We leveraged our previous functions to build up our panorama. We used the first image given by command-line argument as the "base" image, and transformed all other images to that coordinate system. We did this by multiplication of subsequent homographies. To be clear, a homography was created between image 1 and image 2, and image 2 was transformed with this homography. Next, a homography was created between the untransformed image 2 and image 3. This homography was multiplied with the previous homography, and image 3 was transformed with the resulting matrix. If there were more than 3 images, the procedure was continued as described. At each step, newly the transformed image and all previously transformed images were combined together.
@@ -135,13 +135,13 @@ We attempted smooting on the panorama, and made a number of changes to the smoot
 
 Here are our results:  
 Books:  
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panorama%20books%20-%20stitch.png)
+![alt_text](panorama%20books%20-%20stitch.png)
 
 TV:  
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panorama%20TV%20-%20stitch.png)
+![alt_text](panorama%20TV%20-%20stitch.png)
 
 #### Book panorama without smoothing:
-![alt_text](https://github.iu.edu/cs-b657-sp2018/adecourc-kspoon-a2/blob/master/panaroma%20books%20-%20no%20stitch.png)
+![alt_text](panaroma%20books%20-%20no%20stitch.png)
 
 
 
